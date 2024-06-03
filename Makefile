@@ -1,7 +1,7 @@
 ################### PACKAGE ACTIONS #######################
-reinstall_package:
-	@pip uninstall -y 2d-to-plane || :
-	@pip install -e .
+
+update_requirements:
+	@pip install -r requirements.txt
 
 ################### TESTS #################################
 
