@@ -1,2 +1,2 @@
-# depth-planes-from-2d
+# Depth planes from 2D
 Estimating depth planes from 2D images using deep learning
