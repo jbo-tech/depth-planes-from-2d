@@ -164,3 +164,4 @@ cython_debug/
 # Project
 raw_data/
 .python-version
+*.ipynb
