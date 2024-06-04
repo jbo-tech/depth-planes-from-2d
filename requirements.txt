@@ -1,6 +1,8 @@
 numpy
 pandas
 matplotlib
+opencv-python
+imageio
 seaborn
 scikit-learn
 google-api-core
