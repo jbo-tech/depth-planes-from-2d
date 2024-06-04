@@ -4,6 +4,7 @@ matplotlib
 opencv-python
 imageio
 seaborn
+tensorflow
 scikit-learn
 google-api-core
 google-auth
