@@ -2,6 +2,7 @@ numpy
 pandas
 matplotlib
 seaborn
+tensorflow
 scikit-learn
 google-api-core
 google-auth
