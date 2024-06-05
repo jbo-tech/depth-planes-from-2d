@@ -15,18 +15,23 @@ import h5py
 
 
 def preprocess_dataset():
+    preprocess_folder = Path(LOCAL_DATA_PATH).joinpath("ok","_preprocessed")
+
+    if not os.path.exists(preprocess_folder):
+        os.makedirs(preprocess_folder)
 
     if DATA_URBANSYN:
         X_path="urbansyn/rgb"
         y_path="urbansyn/depth"
-        X_path_preprocessed
-        y_path_preprocessed
 
-        file_list = get_data()
-        preprocess_bulk(file_list)
+        X_file_list = gcp_list_files(X_path)
+        preprocess_bulk(X_file_list, str(preprocess_folder) + "/X")
+
+        y_file_list = gcp_list_files(y_path)
+        preprocess_bulk(y_file_list, str(preprocess_folder) + "/y")
 
         # Upload tmp files
-        #upload_directory_with_transfer_manager(source_directory=str(tmp_folder), workers=8)
+        upload_directory_with_transfer_manager(source_directory=str(preprocess_folder), workers=8)
 
     if DATA_MAKE3D:
         pass
@@ -44,42 +49,44 @@ def preprocess_dataset():
         pass
 
 
-def preprocess_bulk(files: list,path: str):
-    file_list = get_data(path='make3d/test/depth')
-    print(file_list)
+def preprocess_bulk(files: list, preprocess_path: str):
+
+    #print(files)
 
     # Parameters
     PREPROCESS_CHUNK_SIZE=2
     tmp_folder = Path(LOCAL_DATA_PATH).joinpath("tmp")
-    bucket_size = round(len(file_list) / PREPROCESS_CHUNK_SIZE)
+    bucket_size = round(len(files) / PREPROCESS_CHUNK_SIZE)
+    print(bucket_size)
     bucket_size = 4
 
     if not os.path.exists(tmp_folder):
         os.makedirs(tmp_folder)
 
-    print(tmp_folder)
+    #print(tmp_folder)
 
     for i in range(bucket_size):
 
         # Donwload a chunk
         chunk_start = i * PREPROCESS_CHUNK_SIZE
         chunk_end = i * PREPROCESS_CHUNK_SIZE+ PREPROCESS_CHUNK_SIZE + 1 if i < bucket_size else None
-        chunk_to_download = file_list[chunk_start:chunk_end]
-        download_many_blobs_with_transfer_manager(chunk_to_download, destination_directory=tmp_folder, workers=8)
+        chunk_to_download = files[chunk_start:chunk_end]
+        download_many_blobs_with_transfer_manager(chunk_to_download[1:], destination_directory=tmp_folder, workers=8)
 
         # Preprocess local file
-        path_preprocessed = []
         files_in_tmp = local_list_files(tmp_folder)
+        print(files_in_tmp)
         for f in files_in_tmp:
-            preprocess_one_image(f)
+            print(f'Preprocessing : {f}')
+            preprocess_one_image(f,preprocess_path)
 
         # Clean the tmp folder
-        clean_data(Path(LOCAL_DATA_PATH).joinpath('tmp','*'))
+        clean_data(tmp_folder)
 
     return "Preprocess local: Ok"
 
 
-def preprocess_one_image(path: str, type: str) -> np.ndarray:
+def preprocess_one_image(path_original: str, path_destination: str) -> np.ndarray:
     """
     _summary_
 
@@ -90,17 +97,23 @@ def preprocess_one_image(path: str, type: str) -> np.ndarray:
         np.ndarray: _description_
     """
 
-    path_ext = path.split('.')[-1]
-    name = path.split('/')[-1].split('.')[-2]+'_pre'
-    path_pre = 'raw_data/'+path.split('/')[-2]
+    if not os.path.exists(path_destination):
+        os.makedirs(path_destination)
+
+    #print(path_destination)
+
+    path_ext = path_original.split('.')[-1]
+    print(path_ext)
+    name = path_original.split('/')[-1].split('.')[-2]+'_pre'
+    #path_pre = 'raw_data/'+path.split('/')[-2]
 
 
     if path_ext == 'exr':
-        pre = preprocess_exr_to_array(path)
-        return save_data(pre, path=path_pre, name=name)
+        pre = preprocess_exr_to_array(path_original) # Return np.array
+        return save_data(pre, path=path_destination, name=name)
     else:
-        pre = preprocess_img_to_array(path)
-        return save_data(pre, path=path_pre, name=name)
+        pre = preprocess_img_to_array(path_original)
+        return save_data(pre, path=path_destination, name=name)
 
 
 
