@@ -8,6 +8,24 @@ import shutil
 from pathlib import Path
 
 
+def get_npy(path: str) -> np.array:
+    """
+    _summary_
+
+    Args:
+        path (str): _description_
+
+    Returns:
+        np.array: _description_
+    """
+    list_npy = local_list_files(path)
+    list_npy_df =[]
+    for f in sorted(list_npy):
+        npy = np.load(f)
+        list_npy_df.append(npy)
+
+    return list_npy_df
+
 
 def clean_data(path: str):
     """
@@ -85,12 +103,16 @@ def local_list_files(start_path='.') -> list:
     Returns:
         list: _description_
     """
+    list_files = []
     for root, dirs, files in os.walk(start_path):
         for file in files:
             print(os.path.join(root, file))
+            list_files.append(os.path.join(root, file))
+
+    return list_files
 
 
-def gcp_list_files(extension=None, prefix=None):
+def gcp_list_files(prefix=None,extension=None):
     """
     Summary
     """
@@ -368,10 +390,11 @@ def get_blob_url(blob_prefix: str) -> str:
 if __name__ == '__main__':
     #get_data(path='make3d/test/depth')
     #get_blob_url('urbansyn/rgb/rgb_7539.png')
-    #gcp_list_files(extension=None, prefix='make3d/test/depth')
+    gcp_list_files(prefix='urbansyn/rgb',extension=None)
     #download_chunks_concurrently('urbansyn/depth/depth_0001.exr', 'depth_0001.exr', chunk_size=64 * 1024 * 1024, workers=8)
     #download_many_blobs_with_transfer_manager(['make3d/test/depth/depth_sph_corr-op36-p-282t000.mat', 'make3d/test/depth/depth_sph_corr-op36-p-313t000.mat'], destination_directory="", workers=8)
     #upload_many_blobs_with_transfer_manager(['00019_00183_indoors_000_010_depth.npy','00019_00183_indoors_000_010_depth_mask.npy'], source_directory="/home/jbo/code/soapoperator/depth-planes-from-2d/raw_data/val/indoors/scene_00019/scan_00183", workers=8)
     #upload_directory_with_transfer_manager(source_directory="/home/jbo/code/soapoperator/depth-planes-from-2d/raw_data/tmp", workers=8)
     #clean_data('/home/jbo/code/soapoperator/depth-planes-from-2d/raw_data/tmp/')
     #local_list_files('/home/jbo/code/soapoperator/depth-planes-from-2d/raw_data/tmp')
+    #get_npy('/home/jbo/code/soapoperator/depth-planes-from-2d/npy')

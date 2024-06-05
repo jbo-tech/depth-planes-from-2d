@@ -4,7 +4,7 @@ import os
 
 ################## Configuration ##################
 IMAGE_ENV=os.environ.get("IMAGE_ENV")
-DATA_URBAN=os.environ.get("DATA_URBAN")
+DATA_URBANSYN=os.environ.get("DATA_URBANSYN")
 DATA_MAKE3D=os.environ.get("DATA_MAKE3")
 DATA_DIODE=os.environ.get("DATA_DIODE")
 DATA_MEGADEPTH=os.environ.get("DATA_MEGADEPTH")
