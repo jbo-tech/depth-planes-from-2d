@@ -157,9 +157,10 @@ def preprocess_exr_to_array(path, log_scale_near=10, log_scale_far=1, log_scale_
     img_log_combined_scaled[img_log_combined_scaled > 65535] = 65535
     png_img = img_log_combined_scaled.astype('uint16')
 
-    img_res = cv2.resize(png_img, dsize=((eval(IMAGE_SHAPE)[1]), (eval(IMAGE_SHAPE)[0])), interpolation=cv2.INTER_CUBIC)
-
-    return img_res
+    res = cv2.resize(png_img, dsize=((eval(IMAGE_SHAPE)[1]), (eval(IMAGE_SHAPE)[0])), interpolation=cv2.INTER_CUBIC)
+    res = np.expand_dims(res, axis=-1)
+    print(res.shape)
+    return res
 
 
 # img = cv2.imread('../raw_data/depth/depth_0005.exr', cv2.IMREAD_ANYCOLOR | cv2.IMREAD_ANYDEPTH)
@@ -201,6 +202,7 @@ def preprocess_img_to_array(path: str) -> np.ndarray:
 #     hf = h5py.File(path, 'r')
 
 if __name__ == '__main__':
+
     preprocess_dataset()
     # X, y = preprocess_bulk()
     # preprocess_one_image(path)
