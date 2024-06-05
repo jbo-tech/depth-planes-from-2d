@@ -1,30 +1,11 @@
 # GCP logic implementation
-from depth_planes.params import *
+from params import *
 import os
 import numpy as np
 import datetime
 from google.cloud import storage
 import shutil
 from pathlib import Path
-
-
-def get_npy(path: str) -> np.array:
-    """
-    _summary_
-
-    Args:
-        path (str): _description_
-
-    Returns:
-        np.array: _description_
-    """
-    list_npy = local_list_files(path)
-    list_npy_df =[]
-    for f in sorted(list_npy):
-        npy = np.load(f)
-        list_npy_df.append(npy)
-
-    return list_npy_df
 
 
 def clean_data(path: str):
@@ -41,27 +22,27 @@ def clean_data(path: str):
     shutil.rmtree(path)
 
 
-def get_data(path: str) -> list:
+def get_npy(path: str) -> np.array:
     """
     _summary_
+
+    Args:
+        path (str): _description_
+
+    Returns:
+        np.array: _description_
     """
+    list_npy = local_list_files(path)
+    list_npy_array =[]
+    for f in sorted(list_npy):
+        npy = np.load(f)
+        list_npy_array.append(npy)
 
-    images = []
+    response = np.expand_dims(list_npy_array,axis=3) if np.array(list_npy_array).ndim == 3 else np.array(list_npy_array)
+    print(response.shape)
+    return response
 
-    if IMAGE_ENV == 'local':
-        folder = "{}/{}".format(os.path.dirname(os.path.dirname(os.getcwd())),path)
-        for image in os.listdir(folder):
-            images.append(folder + image)
-
-    if IMAGE_ENV == 'gcp':
-        prefix = path
-        images = gcp_list_files(extension=None, prefix=prefix)
-
-    # print(images)
-    return images
-
-
-def save_data(file_array: str, name:str, path: str):
+def local_save_data(file_array: str, name:str, path: str):
     """
     Save np.array to a npy file in a bucket and a specific folder
     """
@@ -77,22 +58,6 @@ def save_data(file_array: str, name:str, path: str):
     return file_path
 
 
-def local_save_data(file_array: str, name:str, path: str):
-    """
-    Save np.array to a npy file in a bucket and a specific folder
-    """
-
-    # Check if the folder exists
-    folder = "{}/{}".format(os.path.dirname(os.path.dirname(os.getcwd())),path)
-    if not os.path.exists(folder):
-        os.makedirs(folder)
-
-    # Create and save the npy file
-    file_path = f'{folder}/{name}.npy'
-    np.save(file_path, file_array)
-
-    return file_path
-
 def local_list_files(start_path='.') -> list:
     """
     _summary_
@@ -106,7 +71,7 @@ def local_list_files(start_path='.') -> list:
     list_files = []
     for root, dirs, files in os.walk(start_path):
         for file in files:
-            print(os.path.join(root, file))
+            #print(os.path.join(root, file))
             list_files.append(os.path.join(root, file))
 
     return list_files
@@ -185,7 +150,7 @@ def download_many_blobs_with_transfer_manager(
         if isinstance(result, Exception):
             print("Failed to download {} due to exception: {}".format(name, result))
         else:
-            print("Downloaded {} to {}.".format(name, str(destination_directory) + name))
+            print("Downloaded {} to {}.".format(name, str(destination_directory) + '/' + name))
 
 
 def download_chunks_concurrently(
@@ -352,7 +317,7 @@ def upload_directory_with_transfer_manager(source_directory, workers=8):
     # Finally, convert them all to strings.
     string_paths = [str(path) for path in relative_paths]
 
-    print("Found {} files.".format(len(string_paths)))
+    print("\nFound {} files.".format(len(string_paths)))
 
     # Start the upload.
     results = transfer_manager.upload_many_from_filenames(
@@ -388,13 +353,12 @@ def get_blob_url(blob_prefix: str) -> str:
 
 
 if __name__ == '__main__':
-    #get_data(path='make3d/test/depth')
     #get_blob_url('urbansyn/rgb/rgb_7539.png')
-    gcp_list_files(prefix='urbansyn/rgb',extension=None)
+    #gcp_list_files(prefix='urbansyn/rgb',extension=None)
     #download_chunks_concurrently('urbansyn/depth/depth_0001.exr', 'depth_0001.exr', chunk_size=64 * 1024 * 1024, workers=8)
     #download_many_blobs_with_transfer_manager(['make3d/test/depth/depth_sph_corr-op36-p-282t000.mat', 'make3d/test/depth/depth_sph_corr-op36-p-313t000.mat'], destination_directory="", workers=8)
     #upload_many_blobs_with_transfer_manager(['00019_00183_indoors_000_010_depth.npy','00019_00183_indoors_000_010_depth_mask.npy'], source_directory="/home/jbo/code/soapoperator/depth-planes-from-2d/raw_data/val/indoors/scene_00019/scan_00183", workers=8)
     #upload_directory_with_transfer_manager(source_directory="/home/jbo/code/soapoperator/depth-planes-from-2d/raw_data/tmp", workers=8)
     #clean_data('/home/jbo/code/soapoperator/depth-planes-from-2d/raw_data/tmp/')
     #local_list_files('/home/jbo/code/soapoperator/depth-planes-from-2d/raw_data/tmp')
-    #get_npy('/home/jbo/code/soapoperator/depth-planes-from-2d/npy')
+    get_npy(f'{LOCAL_DATA_PATH}/ok/_preprocessed/X')

@@ -17,13 +17,11 @@ LOCAL_DATA_PATH=os.path.join(os.path.dirname(os.path.dirname(os.getcwd())), "raw
 LOCAL_REGISTRY_PATH=os.path.join(os.path.expanduser('~'),
                                     ".lewagon", "project",
                                     "training_outputs")
-##################  VARIABLES  ##################
+
+##################  CLOUD STORAGE  ##############
 GCP_PROJECT=os.environ.get("GCP_PROJECT")
 GCP_REGION=os.environ.get("GCP_REGION")
 BUCKET_NAME=os.environ.get("BUCKET_NAME")
 
-################## Cloud Storage ##################
-BUCKET_NAME=os.environ.get("BUCKET_NAME")
-
-################## Model ##################
+##################  COMPUTE ENGINE  #############
 MODEL_TARGET=os.environ.get("MODEL_TARGET")

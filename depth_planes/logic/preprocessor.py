@@ -1,7 +1,10 @@
 # Preprocessing
-from depth_planes.params import *
+from params import *
 from depth_planes.logic.data import *
 import os
+os.environ['CUDA_VISIBLE_DEVICES'] ="0"
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
+import time
 from pathlib import Path
 import numpy as np
 import matplotlib.pyplot as plt
@@ -12,6 +15,13 @@ os.environ["OPENCV_IO_ENABLE_OPENEXR"] = "1"
 import cv2
 import scipy.io
 import h5py
+import logging
+
+logging.basicConfig(filename="../depth_planes.log",
+                    format='%(asctime)s %(message)s',
+                    filemode='w')
+logger = logging.getLogger()
+logger.setLevel(logging.INFO)
 
 
 def preprocess_dataset():
@@ -19,6 +29,8 @@ def preprocess_dataset():
 
     if not os.path.exists(preprocess_folder):
         os.makedirs(preprocess_folder)
+
+    start = time.time()
 
     if DATA_URBANSYN:
         X_path="urbansyn/rgb"
@@ -31,23 +43,31 @@ def preprocess_dataset():
         preprocess_bulk(y_file_list, str(preprocess_folder) + "/y")
 
         # Upload tmp files
-        upload_directory_with_transfer_manager(source_directory=str(preprocess_folder), workers=8)
+        upload_directory_with_transfer_manager(source_directory=str(os.path.dirname(preprocess_folder)), workers=8)
 
     if DATA_MAKE3D:
-        pass
+        X_path="urbansyn/rgb"
+        y_path="urbansyn/depth"
 
     if DATA_DIODE:
-        pass
+        X_path="urbansyn/rgb"
+        y_path="urbansyn/depth"
 
     if DATA_MEGADEPTH:
-        pass
+        X_path="urbansyn/rgb"
+        y_path="urbansyn/depth"
 
     if DATA_DIMLRGBD:
-        pass
+        X_path="urbansyn/rgb"
+        y_path="urbansyn/depth"
 
     if DATA_NYUDEPTHV2:
-        pass
+        X_path="urbansyn/rgb"
+        y_path="urbansyn/depth"
 
+    end = time.time()
+    logger.info(f'\n############################################\n✅ Preprocess ok! ({time.strftime("%H:%M:%S", time.gmtime(end - start))})\n############################################')
+    #print(f'\n✅ Preprocess ({time.strftime("%H:%M:%S", time.gmtime(end - start))})')
 
 def preprocess_bulk(files: list, preprocess_path: str):
 
@@ -57,8 +77,9 @@ def preprocess_bulk(files: list, preprocess_path: str):
     PREPROCESS_CHUNK_SIZE=2
     tmp_folder = Path(LOCAL_DATA_PATH).joinpath("tmp")
     bucket_size = round(len(files) / PREPROCESS_CHUNK_SIZE)
-    print(bucket_size)
     bucket_size = 4
+
+    print(f'Files to download : {len(files)}')
 
     if not os.path.exists(tmp_folder):
         os.makedirs(tmp_folder)
@@ -75,7 +96,7 @@ def preprocess_bulk(files: list, preprocess_path: str):
 
         # Preprocess local file
         files_in_tmp = local_list_files(tmp_folder)
-        print(files_in_tmp)
+        #print(files_in_tmp)
         for f in files_in_tmp:
             print(f'Preprocessing : {f}')
             preprocess_one_image(f,preprocess_path)
@@ -103,21 +124,20 @@ def preprocess_one_image(path_original: str, path_destination: str) -> np.ndarra
     #print(path_destination)
 
     path_ext = path_original.split('.')[-1]
-    print(path_ext)
+    #print(path_ext)
     name = path_original.split('/')[-1].split('.')[-2]+'_pre'
     #path_pre = 'raw_data/'+path.split('/')[-2]
 
 
     if path_ext == 'exr':
         pre = preprocess_exr_to_array(path_original) # Return np.array
-        return save_data(pre, path=path_destination, name=name)
+        return local_save_data(pre, path=path_destination, name=name)
     else:
         pre = preprocess_img_to_array(path_original)
-        return save_data(pre, path=path_destination, name=name)
+        return local_save_data(pre, path=path_destination, name=name)
 
 
 
-# preproc du y
 def preprocess_exr_to_array(path, log_scale_near=10, log_scale_far=1, log_scale_medium=5) -> np.ndarray:
     """
     l'image(y) est chargé depuis son path
@@ -137,9 +157,9 @@ def preprocess_exr_to_array(path, log_scale_near=10, log_scale_far=1, log_scale_
     img_log_combined_scaled[img_log_combined_scaled > 65535] = 65535
     png_img = img_log_combined_scaled.astype('uint16')
 
-    res = cv2.resize(png_img, dsize=((eval(IMAGE_SHAPE)[1]), (eval(IMAGE_SHAPE)[0])), interpolation=cv2.INTER_CUBIC)
+    img_res = cv2.resize(png_img, dsize=((eval(IMAGE_SHAPE)[1]), (eval(IMAGE_SHAPE)[0])), interpolation=cv2.INTER_CUBIC)
 
-    return res
+    return img_res
 
 
 # img = cv2.imread('../raw_data/depth/depth_0005.exr', cv2.IMREAD_ANYCOLOR | cv2.IMREAD_ANYDEPTH)
@@ -152,7 +172,6 @@ def preprocess_exr_to_array(path, log_scale_near=10, log_scale_far=1, log_scale_
 # plt.show()
 
 
-#preprocess le X
 def preprocess_img_to_array(path: str) -> np.ndarray:
     """
     _summary_
@@ -162,10 +181,10 @@ def preprocess_img_to_array(path: str) -> np.ndarray:
     img = load_img(path)
     load_image_to_array = img_to_array(img)
     img_standardization = tf.image.per_image_standardization(load_image_to_array)
-    img_x = tf.image.resize(img_standardization, [(eval(IMAGE_SHAPE)[0]), (eval(IMAGE_SHAPE)[1])], preserve_aspect_ratio=True)
+    img_res = tf.image.resize(img_standardization, [(eval(IMAGE_SHAPE)[0]), (eval(IMAGE_SHAPE)[1])], preserve_aspect_ratio=True)
 
     # print('**********************', img_x)
-    return img_x
+    return img_res
 
 
 # def preprocess_mat_to_array(path: str) -> np.ndarray:
@@ -182,7 +201,6 @@ def preprocess_img_to_array(path: str) -> np.ndarray:
 #     hf = h5py.File(path, 'r')
 
 if __name__ == '__main__':
-
     preprocess_dataset()
     # X, y = preprocess_bulk()
     # preprocess_one_image(path)
