@@ -7,7 +7,7 @@ from colorama import Fore, Style #for color in terminal
 from tensorflow import keras
 from google.cloud import storage
 
-from depth_planes.params import *
+from params import *
 
 
 def save_results(params: dict, metrics: dict) -> None:
