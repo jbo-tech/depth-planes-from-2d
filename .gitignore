@@ -166,3 +166,4 @@ raw_data/
 .python-version
 *.ipynb
 notebooks/*/
+.DS_Store
