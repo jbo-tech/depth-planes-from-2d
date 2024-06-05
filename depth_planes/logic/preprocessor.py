@@ -138,7 +138,8 @@ def preprocess_exr_to_array(path, log_scale_near=10, log_scale_far=1, log_scale_
     png_img = img_log_combined_scaled.astype('uint16')
 
     res = cv2.resize(png_img, dsize=((eval(IMAGE_SHAPE)[1]), (eval(IMAGE_SHAPE)[0])), interpolation=cv2.INTER_CUBIC)
-
+    res = np.expand_dims(res, axis=-1)
+    print(res.shape)
     return res
 
 
@@ -183,9 +184,9 @@ def preprocess_img_to_array(path: str) -> np.ndarray:
 
 if __name__ == '__main__':
 
-    preprocess_dataset()
+    # preprocess_dataset()
     # X, y = preprocess_bulk()
     # preprocess_one_image(path)
     # preprocess_img_to_array('../../raw_data/rgb/rgb_0001.png')
     # preprocess_mat_to_array('/home/jbo/code/soapoperator/depth-planes-from-2d/raw_data/make3d/depth/make3d_train_depth_depth_sph_corr-060705-17.10.14-p-018t000.mat')
-    # preprocess_exr_to_array('../../raw_data/depth/depth_0005.exr')
+    preprocess_exr_to_array('../../raw_data/depth/depth_0005.exr')
