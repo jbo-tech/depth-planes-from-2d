@@ -1,25 +1,85 @@
 # Preprocessing
-# from depth_planes.params import *
-import tensorflow as tf
-import cv2
+from depth_planes.params import *
+from depth_planes.logic.data import *
 import os
+from pathlib import Path
 import numpy as np
 import matplotlib.pyplot as plt
+import tensorflow as tf
 from tensorflow import io, image
 from tensorflow.keras.preprocessing.image import img_to_array, load_img
-
 os.environ["OPENCV_IO_ENABLE_OPENEXR"] = "1"
+import cv2
+import scipy.io
+import h5py
 
-def preprocess_bulk():
-    pass
 
-    # img_list_normalized = []
-    # for i in range(len(img_list)):
-    #     img_normalize = img_list[i] / 255
-    #     img_list_normalized.append(img_normalize)
-    #     X = np.array(img_list_normalized)
+def preprocess_dataset():
 
-def preprocess_one_image(paths_list: list, type: str) -> np.ndarray:
+    if DATA_URBANSYN:
+        X_path="urbansyn/rgb"
+        y_path="urbansyn/depth"
+        X_path_preprocessed
+        y_path_preprocessed
+
+        file_list = get_data()
+        preprocess_bulk(file_list)
+
+        # Upload tmp files
+        #upload_directory_with_transfer_manager(source_directory=str(tmp_folder), workers=8)
+
+    if DATA_MAKE3D:
+        pass
+
+    if DATA_DIODE:
+        pass
+
+    if DATA_MEGADEPTH:
+        pass
+
+    if DATA_DIMLRGBD:
+        pass
+
+    if DATA_NYUDEPTHV2:
+        pass
+
+
+def preprocess_bulk(files: list,path: str):
+    file_list = get_data(path='make3d/test/depth')
+    print(file_list)
+
+    # Parameters
+    PREPROCESS_CHUNK_SIZE=2
+    tmp_folder = Path(LOCAL_DATA_PATH).joinpath("tmp")
+    bucket_size = round(len(file_list) / PREPROCESS_CHUNK_SIZE)
+    bucket_size = 4
+
+    if not os.path.exists(tmp_folder):
+        os.makedirs(tmp_folder)
+
+    print(tmp_folder)
+
+    for i in range(bucket_size):
+
+        # Donwload a chunk
+        chunk_start = i * PREPROCESS_CHUNK_SIZE
+        chunk_end = i * PREPROCESS_CHUNK_SIZE+ PREPROCESS_CHUNK_SIZE + 1 if i < bucket_size else None
+        chunk_to_download = file_list[chunk_start:chunk_end]
+        download_many_blobs_with_transfer_manager(chunk_to_download, destination_directory=tmp_folder, workers=8)
+
+        # Preprocess local file
+        path_preprocessed = []
+        files_in_tmp = local_list_files(tmp_folder)
+        for f in files_in_tmp:
+            preprocess_one_image(f)
+
+        # Clean the tmp folder
+        clean_data(Path(LOCAL_DATA_PATH).joinpath('tmp','*'))
+
+    return "Preprocess local: Ok"
+
+
+def preprocess_one_image(path: str, type: str) -> np.ndarray:
     """
     _summary_
 
@@ -30,21 +90,17 @@ def preprocess_one_image(paths_list: list, type: str) -> np.ndarray:
         np.ndarray: _description_
     """
 
-    for path in paths_list:
+    path_ext = path.split('.')[-1]
+    name = path.split('/')[-1].split('.')[-2]+'_pre'
+    path_pre = 'raw_data/'+path.split('/')[-2]
 
-        if type == 'jpg':
-            pass
 
-        if type == 'png':
-            pass
-
-        if type == 'exr':
-            pass
-
-        if type == 'mat':
-            pass
-
-        save_data(file,'preprocessed')
+    if path_ext == 'exr':
+        pre = preprocess_exr_to_array(path)
+        return save_data(pre, path=path_pre, name=name)
+    else:
+        pre = preprocess_img_to_array(path)
+        return save_data(pre, path=path_pre, name=name)
 
 
 
@@ -68,7 +124,8 @@ def preprocess_exr_to_array(path, log_scale_near=10, log_scale_far=1, log_scale_
     img_log_combined_scaled[img_log_combined_scaled > 65535] = 65535
     png_img = img_log_combined_scaled.astype('uint16')
 
-    res = cv2.resize(png_img, dsize=(512, 256), interpolation=cv2.INTER_CUBIC)
+    res = cv2.resize(png_img, dsize=((eval(IMAGE_SHAPE)[1]), (eval(IMAGE_SHAPE)[0])), interpolation=cv2.INTER_CUBIC)
+
     return res
 
 
@@ -92,20 +149,30 @@ def preprocess_img_to_array(path: str) -> np.ndarray:
     img = load_img(path)
     load_image_to_array = img_to_array(img)
     img_standardization = tf.image.per_image_standardization(load_image_to_array)
-    img_x = tf.image.resize(img_standardization, [256, 512], preserve_aspect_ratio=True)
+    img_x = tf.image.resize(img_standardization, [(eval(IMAGE_SHAPE)[0]), (eval(IMAGE_SHAPE)[1])], preserve_aspect_ratio=True)
 
     # print('**********************', img_x)
     return img_x
 
 
-def preprocess_mat_to_array(path: str) -> np.ndarray:
-    """
-    _summary_
-    """
-    pass
+# def preprocess_mat_to_array(path: str) -> np.ndarray:
+#     """
+#     _summary_
+#     """
+#     mat = scipy.io.loadmat(mat_path)
+#     return mat
 
+# def preprocess_h5_to_array(path: str) -> np.ndarray:
+#     """
+#     _summary_
+#     """
+#     hf = h5py.File(path, 'r')
 
 if __name__ == '__main__':
+
+    preprocess_dataset()
+    # X, y = preprocess_bulk()
+    # preprocess_one_image(path)
     # preprocess_img_to_array('../../raw_data/rgb/rgb_0001.png')
-    # preprocess_mat_to_array()
+    # preprocess_mat_to_array('/home/jbo/code/soapoperator/depth-planes-from-2d/raw_data/make3d/depth/make3d_train_depth_depth_sph_corr-060705-17.10.14-p-018t000.mat')
     # preprocess_exr_to_array('../../raw_data/depth/depth_0005.exr')
