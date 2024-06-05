@@ -15,18 +15,23 @@ import h5py
 
 
 def preprocess_dataset():
+    preprocess_folder = Path(LOCAL_DATA_PATH).joinpath("ok","_preprocessed")
+
+    if not os.path.exists(tmp_folder):
+        os.makedirs(tmp_folder)
 
     if DATA_URBANSYN:
         X_path="urbansyn/rgb"
         y_path="urbansyn/depth"
-        X_path_preprocessed
-        y_path_preprocessed
 
-        file_list = get_data()
+        X_file_list = get_data(X_path)
+        preprocess_bulk(file_list)
+
+        y_file_list = get_data(y_path)
         preprocess_bulk(file_list)
 
         # Upload tmp files
-        #upload_directory_with_transfer_manager(source_directory=str(tmp_folder), workers=8)
+        upload_directory_with_transfer_manager(source_directory=str(preprocess_folder), workers=8)
 
     if DATA_MAKE3D:
         pass
@@ -44,12 +49,12 @@ def preprocess_dataset():
         pass
 
 
-def preprocess_bulk(files: list,path: str):
-    file_list = get_data(path='make3d/test/depth')
-    print(file_list)
+def preprocess_bulk(files: list, preprocess_path: str):
+
+    print(files)
 
     # Parameters
-    PREPROCESS_CHUNK_SIZE=2
+    PREPROCESS_CHUNK_SIZE=200
     tmp_folder = Path(LOCAL_DATA_PATH).joinpath("tmp")
     bucket_size = round(len(file_list) / PREPROCESS_CHUNK_SIZE)
     bucket_size = 4
@@ -74,7 +79,7 @@ def preprocess_bulk(files: list,path: str):
             preprocess_one_image(f)
 
         # Clean the tmp folder
-        clean_data(Path(LOCAL_DATA_PATH).joinpath('tmp','*'))
+        clean_data(Path(LOCAL_DATA_PATH).joinpath('tmp'))
 
     return "Preprocess local: Ok"
 
