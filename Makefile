@@ -3,6 +3,12 @@
 update_requirements:
 	@pip install -r requirements.txt
 
+run_preprocess:
+	python -c 'from depth_planes.main import preprocess; preprocess()'
+
+run_train:
+	python -c 'from depth_planes.main import train; train()'
+
 ################### TESTS #################################
 
 
