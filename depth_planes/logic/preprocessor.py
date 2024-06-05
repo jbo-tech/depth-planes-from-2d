@@ -169,6 +169,7 @@ def preprocess_img_to_array(path: str) -> np.ndarray:
 #     hf = h5py.File(path, 'r')
 
 if __name__ == '__main__':
+
     preprocess_dataset()
     # X, y = preprocess_bulk()
     # preprocess_one_image(path)
