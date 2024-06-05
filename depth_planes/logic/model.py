@@ -68,6 +68,7 @@ def train_model(
         y: np.ndarray,
         batch_size=256,
         patience=10,
+        epochs=500,
         validation_data=None, # overrides validation_split
         validation_split=0.3):
     """
@@ -85,13 +86,13 @@ def train_model(
         y,
         validation_data=validation_data,
         validation_split=validation_split,
-        epochs=100,
+        epochs=epochs,
         batch_size=batch_size,
         callbacks=[es],
-        verbose=0
+        verbose=1
     )
 
-    print(f"✅ Model trained on {len(X)} images with min val MAE: {round(np.min(history.history['val_mae']), 2)}")
+    print(f"✅ Model trained on {len(X)} images")
 
     return model, history
 
