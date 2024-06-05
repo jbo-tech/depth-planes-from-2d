@@ -1,8 +1,11 @@
 import numpy as np
 import pandas as pd
+from sklearn.model_selection import train_test_split
 
 from logic.model import build_autoencoder, build_decoder, build_encoder, compile_autoencoder, train_model, evaluate_model
 from logic.registry import save_model, save_results, load_model
+from logic.preprocessor import *
+from logic.data import *
 
 ### Load data and preprocess, save preprocessed data on bucket
 
@@ -12,18 +15,36 @@ def preprocess():
     - Process query data
     - Store processed data on new bucket
     """
+    preprocess_dataset()
 
     print("✅ preprocess() done \n")
 
+### Load preprocessed data, train-test-split
+def load_processed_data(split_ratio: float = 0.2):
+
+    # Load processed data using data.py
+
+    path_X = f'{LOCAL_DATA_PATH}/ok/_preprocessed/X'
+    path_y = f'{LOCAL_DATA_PATH}/ok/_preprocessed/y'
+
+    data_processed_X = get_npy(path_X) #array -> shape (nb, 128,256,3)
+    data_processed_y = get_npy(path_y) #array -> shape (nb, 128, 256, 1)
+
+    # Create (X_train, y_train, X_test, y_test)
+
+    X_train, X_test, y_train, y_test = train_test_split(data_processed_X, data_processed_y, test_size=split_ratio)
+
+    return X_train, X_test, y_train, y_test
 
 ### Train model
-def train(split_ratio: float = 0.2,
-        learning_rate=0.001,
-        batch_size = 256,
-        patience = 2,
-        validation_split = 0.2,
-        latent_dimension = 32,
-        epochs = 500):
+def train(X_train,
+          y_train,
+          learning_rate=0.001,
+          batch_size = 256,
+          patience = 2,
+          validation_split = 0.2,
+          latent_dimension = 32,
+          epochs = 500):
     """
     - Download processed data from buckets
     - Create train and test splits
@@ -32,23 +53,6 @@ def train(split_ratio: float = 0.2,
 
     Return val_mae as a float
     """
-
-    # Load processed data using data.py
-
-    data_processed_X = get_data_from() #array
-    data_processed_y = get_data_from() #array
-
-    # Create (X_train, y_train, X_test, y_test)
-
-    train_length = int(len(data_processed_X)*(1-split_ratio))
-
-    X_train = data_processed_X[]
-    X_test =
-
-    y_train =
-    y_test =
-
-
     # Train model using `model.py`
     model = load_model()
 
@@ -71,7 +75,7 @@ def train(split_ratio: float = 0.2,
 
     params = dict(
         context="evaluate", # Package behavior
-        training_set_size=len(X_test)
+        training_set_size=len(X_train)
         )
 
     # Save results on the hard drive using registry.py
@@ -85,7 +89,7 @@ def train(split_ratio: float = 0.2,
     return val_mae
 
 ### Evaluate model
-def evaluate(batch_size=64):
+def evaluate(X_test, y_test, batch_size=64):
     """
     Evaluate the performance of the model on processed test data
     Return MAE as a float
@@ -118,9 +122,7 @@ def predict(X_pred: np.ndarray = None ) -> np.ndarray:
     model = load_model()
     assert model is not None
 
-    #X_processed =
-
-    y_pred = model.predict(X_processed)
+    y_pred = model.predict(X_pred)
 
     print("\n✅ prediction done: ", y_pred.shape, "\n")
 
