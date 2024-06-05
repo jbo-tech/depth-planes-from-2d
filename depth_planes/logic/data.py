@@ -5,7 +5,17 @@ import numpy as np
 import datetime
 from google.cloud import storage
 
-def get_data(path: str) -> list:
+def clean_data(bucket_name: str, path: str):
+    """
+    _summary_
+
+    Args:
+        bucket_name (str): _description_
+        path (str): _description_
+    """
+    # Todo
+
+def get_data(bucket_name: str, path: str) -> list:
     """
     _summary_
     """
@@ -18,14 +28,10 @@ def get_data(path: str) -> list:
             images.append(folder + image)
 
     if IMAGE_ENV == 'gcp':
-        print('test')
-        client = storage.Client(project=GCP_PROJECT)
-        print(BUCKET_NAME)
-        for blob in client.list_blobs(BUCKET_NAME, prefix=path):
-            images.append(blob.name)
-            #get_blob_url(blob)
+        prefix = path
+        images = list_files(bucket_name, extension=None, prefix=prefix)
 
-    print(images)
+    # print(images)
     return images
 
 def save_data(file_array: str, name:str, path: str):
@@ -44,7 +50,7 @@ def save_data(file_array: str, name:str, path: str):
         np.save(file_path, file_array)
 
     if IMAGE_ENV == 'gcp':
-
+        prefix = path
         # Init GCP storage
         client = storage.Client(project=GCP_PROJECT)
         bucket = client.bucket(BUCKET_NAME)
@@ -53,11 +59,31 @@ def save_data(file_array: str, name:str, path: str):
         file_bytes = file_array.encode('utf-8')
 
         # Create a unique blob name
-        blob_name = f"{path}/{name}.npy"
+        blob_name = f"{prefix}/{name}.npy"
 
         # Upload the file to the bucket
         blob = bucket.blob(blob_name)
         blob.upload_from_string(file_bytes, content_type='application/octet-stream')
+
+def list_files(bucket_name: str, extension=None, prefix=None):
+    """
+    Summary
+    """
+    #
+    client = storage.Client(project=GCP_PROJECT)
+    bucket = client.bucket(bucket_name)
+
+    #
+    blobs = bucket.list_blobs(prefix=prefix)
+
+    #
+    if extension:
+        files = [blob.name for blob in blobs if blob.name.endswith(extension)]
+    else:
+        files = [blob.name for blob in blobs]
+
+    #print(files)
+    return files
 
 def get_blob_url(blob_prefix: str) -> str:
 
@@ -73,12 +99,11 @@ def get_blob_url(blob_prefix: str) -> str:
         method="GET",
     )
 
-    print("Generated GET signed URL:")
-    print(url)
-
+    #print("Generated GET signed URL:" + url)
     return url
 
 if __name__ == '__main__':
-    #get_data('urbansyn/rgb')
+    get_data(bucket_name='depth-planes-from-2d-data',path='make3d/test/depth')
     #save_data('[[1,1][1,1]]','test','doss/perferct')
     #get_blob_url('urbansyn/rgb/rgb_7539.png')
+    #list_files(bucket_name='depth-planes-from-2d-data', extension=None, prefix='make3d/test/depth')
