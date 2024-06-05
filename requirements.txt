@@ -15,6 +15,7 @@ google-auth
 google-auth-oauthlib
 google-cloud-core
 google-cloud-storage
-
+colorama
+ipykernel
 
 openexr-numpy
