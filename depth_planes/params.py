@@ -1,4 +1,7 @@
 import os
+
+##################  VARIABLES  ##################
+
 ################## Configuration ##################
 IMAGE_ENV=os.environ.get("IMAGE_ENV")
 DATA_URBAN=os.environ.get("DATA_URBAN")

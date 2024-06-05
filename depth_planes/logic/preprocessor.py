@@ -95,21 +95,21 @@ def preprocess_one_image(path: str, type: str) -> np.ndarray:
         np.ndarray: _description_
     """
 
-    if type == 'img':
-        file_array = preprocess_img_to_array(path)
-
-    if type == 'exr':
-        file_array = preprocess_exr_to_array(path, log_scale_near=10, log_scale_far=1, log_scale_medium=5)
-
-    if type == 'mat':
-        pass
-
-    if type == 'h5':
-        pass
-
-    #return file_array
+    path_ext = path.split('.')[-1]
+    name = path.split('/')[-1].split('.')[-2]+'_pre'
+    path_pre = 'raw_data/'+path.split('/')[-2]
 
 
+    if path_ext == 'exr':
+        pre = preprocess_exr_to_array(path)
+        return save_data(pre, path=path_pre, name=name)
+    else:
+        pre = preprocess_img_to_array(path)
+        return save_data(pre, path=path_pre, name=name)
+
+
+
+# preproc du y
 def preprocess_exr_to_array(path, log_scale_near=10, log_scale_far=1, log_scale_medium=5) -> np.ndarray:
     """
     l'image(y) est chargé depuis son path
@@ -129,11 +129,22 @@ def preprocess_exr_to_array(path, log_scale_near=10, log_scale_far=1, log_scale_
     img_log_combined_scaled[img_log_combined_scaled > 65535] = 65535
     png_img = img_log_combined_scaled.astype('uint16')
 
-    res = cv2.resize(png_img, dsize=(512, 256), interpolation=cv2.INTER_CUBIC)
+    res = cv2.resize(png_img, dsize=((eval(IMAGE_SHAPE)[1]), (eval(IMAGE_SHAPE)[0])), interpolation=cv2.INTER_CUBIC)
 
     return res
 
 
+# img = cv2.imread('../raw_data/depth/depth_0005.exr', cv2.IMREAD_ANYCOLOR | cv2.IMREAD_ANYDEPTH)
+
+# a = preprocess_exr_to_array(path, log_scale_near=10, log_scale_far=1, log_scale_medium=5)
+
+# plt.imshow(a, cmap='gnuplot_r')  # Utiliser une colormap inversée pour plus de contraste
+# plt.colorbar()
+# plt.title('Depth Image with Increased Contrast for Near Objects')
+# plt.show()
+
+
+#preprocess le X
 def preprocess_img_to_array(path: str) -> np.ndarray:
     """
     _summary_
@@ -143,28 +154,30 @@ def preprocess_img_to_array(path: str) -> np.ndarray:
     img = load_img(path)
     load_image_to_array = img_to_array(img)
     img_standardization = tf.image.per_image_standardization(load_image_to_array)
-    img_x = tf.image.resize(img_standardization, [256, 512], preserve_aspect_ratio=True)
+    img_x = tf.image.resize(img_standardization, [(eval(IMAGE_SHAPE)[0]), (eval(IMAGE_SHAPE)[1])], preserve_aspect_ratio=True)
 
     # print('**********************', img_x)
     return img_x
 
 
-def preprocess_mat_to_array(path: str) -> np.ndarray:
-    """
-    _summary_
-    """
-    mat = scipy.io.loadmat(mat_path)
-    return mat
+# def preprocess_mat_to_array(path: str) -> np.ndarray:
+#     """
+#     _summary_
+#     """
+#     mat = scipy.io.loadmat(mat_path)
+#     return mat
 
-def preprocess_h5_to_array(path: str) -> np.ndarray:
-    """
-    _summary_
-    """
-    hf = h5py.File(path, 'r')
-    return hf
+# def preprocess_h5_to_array(path: str) -> np.ndarray:
+#     """
+#     _summary_
+#     """
+#     hf = h5py.File(path, 'r')
 
 if __name__ == '__main__':
+
+    preprocess_dataset()
+    # X, y = preprocess_bulk()
+    # preprocess_one_image(path)
     # preprocess_img_to_array('../../raw_data/rgb/rgb_0001.png')
     # preprocess_mat_to_array('/home/jbo/code/soapoperator/depth-planes-from-2d/raw_data/make3d/depth/make3d_train_depth_depth_sph_corr-060705-17.10.14-p-018t000.mat')
     # preprocess_exr_to_array('../../raw_data/depth/depth_0005.exr')
-    preprocess_bulk('','')
