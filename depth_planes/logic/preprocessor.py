@@ -156,6 +156,11 @@ def preprocess_one_image(path_original: str, path_destination: str) -> np.ndarra
     if path_ext == 'exr':
         pre = preprocess_exr_to_array(path_original) # Return np.array
         return local_save_data(pre, path=path_destination, name=name)
+    elif path_ext =='h5':
+        rgb_res, depth_res = preprocess_h5_to_array(path_original)
+        rgb_path = local_save_data(rgb_res, name=name+'_rgb', path=path_destination)
+        depth_path = local_save_data(depth_res, name=name+'_depth', path=path_destination)
+        return rgb_path, depth_path
     else:
         pre = preprocess_img_to_array(path_original)
         return local_save_data(pre, path=path_destination, name=name)
@@ -209,17 +214,41 @@ def preprocess_img_to_array(path: str) -> np.ndarray:
 #     mat = scipy.io.loadmat(mat_path)
 #     return mat
 
-# def preprocess_h5_to_array(path: str) -> np.ndarray:
-#     """
-#     _summary_
-#     """
-#     hf = h5py.File(path, 'r')
+def preprocess_h5_to_array(path: str, log_scale_near=10, log_scale_far=1, log_scale_medium=5) -> np.ndarray:
+    """
+    _summary_
+    """
+    h5 = h5py.File(path, 'r')
+
+    h5_rgb = h5['rgb']
+    h5_rgb_r = np.moveaxis(h5_rgb, 0, -1)
+    img_standardization = tf.image.per_image_standardization(h5_rgb_r)
+    h5_rgb_res = tf.image.resize(img_standardization, [(eval(IMAGE_SHAPE)[0]), (eval(IMAGE_SHAPE)[1])], preserve_aspect_ratio=False)
+
+    h5_depth = h5['depth']
+    img_normalized = h5_depth / np.max(h5_depth)
+    img_log_near = np.log1p(img_normalized * log_scale_near)
+    img_log_far = np.log1p(img_normalized * log_scale_far)
+    img_log_medium = np.log1p(img_normalized * log_scale_medium)
+    img_log_combined = img_log_near * 0.33 + img_log_far * 0.33 + img_log_medium * 0.33
+    res = cv2.resize(img_log_combined, dsize=((eval(IMAGE_SHAPE)[1]), (eval(IMAGE_SHAPE)[0])), interpolation=cv2.INTER_CUBIC)
+    h5_depth_res = np.expand_dims(res, axis=-1)
+
+    return h5_rgb_res, h5_depth_res
+
+
+
+
+
+
+
 
 if __name__ == '__main__':
 
-    preprocess_dataset()
+    # preprocess_dataset()
     # X, y = preprocess_bulk()
-    # preprocess_one_image(path)
+    preprocess_one_image('/home/mathieu/code/MathieuAmacher/depth-planes-from-2d/raw_data/h5/nyudepthv2_train_study_0008_00001.h5', '/home/mathieu/code/MathieuAmacher/depth-planes-from-2d/raw_data/h5/')
     # preprocess_img_to_array('../../raw_data/rgb/rgb_0001.png')
     # preprocess_mat_to_array('/home/jbo/code/soapoperator/depth-planes-from-2d/raw_data/make3d/depth/make3d_train_depth_depth_sph_corr-060705-17.10.14-p-018t000.mat')
     # preprocess_exr_to_array('../../raw_data/depth/depth_0005.exr')
+    #preprocess_h5_to_array('/home/mathieu/code/MathieuAmacher/depth-planes-from-2d/raw_data/h5/nyudepthv2_train_basement_0001b_00001.h5')
