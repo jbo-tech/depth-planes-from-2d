@@ -15,14 +15,6 @@ os.environ["OPENCV_IO_ENABLE_OPENEXR"] = "1"
 import cv2
 import scipy.io
 import h5py
-import logging
-
-logging.basicConfig(filename="../depth_planes.log",
-                    format='%(asctime)s %(message)s',
-                    filemode='w')
-logger = logging.getLogger()
-logger.setLevel(logging.INFO)
-
 
 def preprocess_dataset():
     preprocess_folder = Path(LOCAL_DATA_PATH).joinpath("ok","_preprocessed")
@@ -37,36 +29,68 @@ def preprocess_dataset():
         y_path="urbansyn/depth"
 
         X_file_list = gcp_list_files(X_path)
-        preprocess_bulk(X_file_list, str(preprocess_folder) + "/X")
-
         y_file_list = gcp_list_files(y_path)
-        preprocess_bulk(y_file_list, str(preprocess_folder) + "/y")
 
-        # Upload tmp files
-        upload_directory_with_transfer_manager(source_directory=str(os.path.dirname(preprocess_folder)), workers=8)
+        preprocess_bulk( X_file_list,str(preprocess_folder) + "/X")
+        preprocess_bulk( y_file_list,str(preprocess_folder) + "/y")
 
     if DATA_MAKE3D:
-        X_path="urbansyn/rgb"
-        y_path="urbansyn/depth"
+        X_path="make3d/rgb"
+        y_path="make3d/depth"
+
+        X_file_list = gcp_list_files(X_path)
+        y_file_list = gcp_list_files(y_path)
+
+        preprocess_bulk( X_file_list,str(preprocess_folder) + "/X")
+        preprocess_bulk( y_file_list,str(preprocess_folder) + "/y")
 
     if DATA_DIODE:
-        X_path="urbansyn/rgb"
-        y_path="urbansyn/depth"
+        X_path="diode/rgb"
+        y_path="diode/depth"
+
+        X_file_list = gcp_list_files(X_path)
+        y_file_list = gcp_list_files(y_path)
+
+        preprocess_bulk( X_file_list,str(preprocess_folder) + "/X")
+        preprocess_bulk( y_file_list,str(preprocess_folder) + "/y")
 
     if DATA_MEGADEPTH:
-        X_path="urbansyn/rgb"
-        y_path="urbansyn/depth"
+        X_path="megadepth/rgb"
+        y_path="megadepth/depth"
+
+        X_file_list = gcp_list_files(X_path)
+        y_file_list = gcp_list_files(y_path)
+
+        preprocess_bulk( X_file_list,str(preprocess_folder) + "/X")
+        preprocess_bulk( y_file_list,str(preprocess_folder) + "/y")
 
     if DATA_DIMLRGBD:
-        X_path="urbansyn/rgb"
-        y_path="urbansyn/depth"
+        X_path="dimlrgbd/rgb"
+        y_path="dimlrgbd/depth"
+
+        X_file_list = gcp_list_files(X_path)
+        y_file_list = gcp_list_files(y_path)
+
+        preprocess_bulk( X_file_list,str(preprocess_folder) + "/X")
+        preprocess_bulk( y_file_list,str(preprocess_folder) + "/y")
 
     if DATA_NYUDEPTHV2:
-        X_path="urbansyn/rgb"
-        y_path="urbansyn/depth"
+        X_path="nyudepthv2/rgb"
+        y_path="nyudepthv2/depth"
+
+        X_file_list = gcp_list_files(X_path)
+        y_file_list = gcp_list_files(y_path)
+
+        preprocess_bulk( X_file_list,str(preprocess_folder) + "/X")
+        preprocess_bulk( y_file_list,str(preprocess_folder) + "/y")
+
+    #print(pool_args)
+
+    # Upload tmp files
+    upload_directory_with_transfer_manager(source_directory=str(os.path.dirname(preprocess_folder)), workers=8)
 
     end = time.time()
-    logger.info(f'\n############################################\n✅ Preprocess ok! ({time.strftime("%H:%M:%S", time.gmtime(end - start))})\n############################################')
+    logger.info(f'\n\n✅ Preprocess ok! ({time.strftime("%H:%M:%S", time.gmtime(end - start))})\n############################################')
     #print(f'\n✅ Preprocess ({time.strftime("%H:%M:%S", time.gmtime(end - start))})')
 
 def preprocess_bulk(files: list, preprocess_path: str):
@@ -74,10 +98,10 @@ def preprocess_bulk(files: list, preprocess_path: str):
     #print(files)
 
     # Parameters
-    PREPROCESS_CHUNK_SIZE=2
+    PREPROCESS_CHUNK_SIZE=200
     tmp_folder = Path(LOCAL_DATA_PATH).joinpath("tmp")
     bucket_size = round(len(files) / PREPROCESS_CHUNK_SIZE)
-    bucket_size = 4
+    #bucket_size = 4
 
     print(f'Files to download : {len(files)}')
 
@@ -90,7 +114,7 @@ def preprocess_bulk(files: list, preprocess_path: str):
 
         # Donwload a chunk
         chunk_start = i * PREPROCESS_CHUNK_SIZE
-        chunk_end = i * PREPROCESS_CHUNK_SIZE+ PREPROCESS_CHUNK_SIZE + 1 if i < bucket_size else None
+        chunk_end = i * PREPROCESS_CHUNK_SIZE+ PREPROCESS_CHUNK_SIZE + 1 if i < bucket_size else len(files)
         chunk_to_download = files[chunk_start:chunk_end]
         download_many_blobs_with_transfer_manager(chunk_to_download[1:], destination_directory=tmp_folder, workers=8)
 
@@ -159,18 +183,8 @@ def preprocess_exr_to_array(path, log_scale_near=10, log_scale_far=1, log_scale_
 
     res = cv2.resize(png_img, dsize=((eval(IMAGE_SHAPE)[1]), (eval(IMAGE_SHAPE)[0])), interpolation=cv2.INTER_CUBIC)
     res = np.expand_dims(res, axis=-1)
-    print(res.shape)
+    # print(res.shape)
     return res
-
-
-# img = cv2.imread('../raw_data/depth/depth_0005.exr', cv2.IMREAD_ANYCOLOR | cv2.IMREAD_ANYDEPTH)
-
-# a = preprocess_exr_to_array(path, log_scale_near=10, log_scale_far=1, log_scale_medium=5)
-
-# plt.imshow(a, cmap='gnuplot_r')  # Utiliser une colormap inversée pour plus de contraste
-# plt.colorbar()
-# plt.title('Depth Image with Increased Contrast for Near Objects')
-# plt.show()
 
 
 def preprocess_img_to_array(path: str) -> np.ndarray:

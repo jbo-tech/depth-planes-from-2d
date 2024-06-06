@@ -39,7 +39,7 @@ def get_npy(path: str) -> np.array:
         list_npy_array.append(npy)
 
     response = np.expand_dims(list_npy_array,axis=3) if np.array(list_npy_array).ndim == 3 else np.array(list_npy_array)
-    print(response.shape)
+    print(response)
     return response
 
 def local_save_data(file_array: str, name:str, path: str):
