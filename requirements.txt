@@ -17,9 +17,6 @@ google-cloud-core
 google-cloud-storage
 colorama
 ipykernel
-
 openexr-numpy
-
 h5py
-
-PIL
+pillow
