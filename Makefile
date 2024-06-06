@@ -12,7 +12,6 @@ ML_DIR=~/.lewagon/project
 
 reset_local_files:
 	rm -rf ${ML_DIR}
-	mkdir ${ML_DIR}
 	mkdir ${ML_DIR}/training_outputs
 	mkdir ${ML_DIR}/training_outputs/metrics
 	mkdir ${ML_DIR}/training_outputs/models
