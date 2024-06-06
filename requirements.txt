@@ -19,3 +19,7 @@ colorama
 ipykernel
 
 openexr-numpy
+
+h5py
+
+PIL
