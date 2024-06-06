@@ -54,11 +54,11 @@ def load_processed_data(split_ratio: float = 0.2):
 def train(X_train,
           y_train,
           learning_rate=0.01,
-          batch_size = 256,
-          patience = 2,
+          batch_size = 32,
+          patience = 20,
           validation_split = 0.2,
           latent_dimension = 32,
-          epochs = 5):
+          epochs = 5000):
     """
     - Download processed data from buckets
     - Create train and test splits
