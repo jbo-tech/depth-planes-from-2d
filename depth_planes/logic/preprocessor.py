@@ -92,7 +92,7 @@ def preprocess_dataset():
         preprocess_bulk( nyudepthv2_file_list, str(preprocess_folder),'nyudepthv2')
 
     # Upload tmp files
-    #upload_directory_with_transfer_manager(source_directory=str(os.path.dirname(preprocess_folder)), workers=8)
+    upload_directory_with_transfer_manager(source_directory=str(os.path.dirname(preprocess_folder)), workers=8)
 
     end = time.time()
     logger.info(f'\n\n✅ Preprocess : ok! ({time.strftime("%H:%M:%S", time.gmtime(end - start))})\n############################################')

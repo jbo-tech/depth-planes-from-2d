@@ -4,6 +4,7 @@ from params import *
 from depth_planes.utils import *
 from depth_planes.logic.registry import *
 from depth_planes.logic.preprocessor import *
+from depth_planes.logic.model import *
 ## Fast
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -34,15 +35,15 @@ app.state.model = load_model()
 @app.get("/depth")
 async def depth(
         url: str,  # https://placehold.co/600x400
-    ) -> JSONResponse:
+    ):
     """
     Return a depth map of an image.
     Assumes `url` is provided.
     """
     # $CHA_BEGIN
 
-    cache_folder = os.path.join(ROOT_DIRECTORY, "cache")
-    cache_folder_preprocessed = os.path.join(ROOT_DIRECTORY, "cache", "preprocessed")
+    cache_folder = os.path.join(LOCAL_DATA_PATH, "cache")
+    cache_folder_preprocessed = os.path.join(LOCAL_DATA_PATH, "cache", "preprocessed")
     if not os.path.exists(cache_folder):
         os.makedirs(cache_folder)
     if not os.path.exists(cache_folder_preprocessed):
@@ -52,9 +53,8 @@ async def depth(
 
     image_cache_path, image_cache_extension = download_image(url, cache_folder, filename)
 
-    if not image_cache_path.is_file():
+    if not os.path.exists(image_cache_path):
         return {"error": "Image not found on the server"}
-    return FileResponse(image_path)
 
     model = app.state.model
     assert model is not None
@@ -64,6 +64,8 @@ async def depth(
     y_pred = model.predict(X_processed)
 
     path_pred = save_image(y_pred, cache_folder_preprocessed, filename)
+
+    #return image_cache_path
 
     # ⚠️ fastapi only accepts simple Python data types as a return value
     # among them dict, list, str, int, float, bool
@@ -81,7 +83,7 @@ async def depth(
 async def slices(
         url: str,  # https://placehold.co/600x400
         nb_planes: Optional[int] = 5 # 1 or None
-    ) -> JSONResponse:
+    ):
     """
     Return all the planes of an image.
     Assumes `url` is provided.
@@ -121,6 +123,10 @@ async def slices(
         )
     # $CHA_END
 
+# http://127.0.0.1:8000/convert?url=https://placehold.co/600x400
+@app.get("/convert")
+async def convert():
+    pass
 
 @app.get("/")
 def root():

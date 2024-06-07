@@ -168,3 +168,4 @@ raw_data/
 notebooks/*/
 .DS_Store
 saved_files/
+notebooks/*.md

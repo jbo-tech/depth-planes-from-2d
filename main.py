@@ -75,6 +75,8 @@ def train(X_train,
         decoder = build_decoder(latent_dimension=latent_dimension)
         model = build_autoencoder(encoder, decoder)
 
+        logger.info(f'\n\nNew model:\n{model.summary()}\n############################################')
+
         model = compile_autoencoder(autoencoder=model, learning_rate=learning_rate)
 
         model, history = train_model(model=model,

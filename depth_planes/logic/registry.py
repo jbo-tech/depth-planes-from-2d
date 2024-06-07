@@ -4,6 +4,7 @@ import time
 import pickle
 import numpy as np
 from colorama import Fore, Style #for color in terminal
+import tensorflow as tf
 import keras
 from google.cloud import storage
 from PIL import Image
@@ -88,7 +89,7 @@ def load_model() -> keras.Model:
 
         most_recent_model_path_on_disk = sorted(local_model_paths)[-1]
 
-        print(Fore.BLUE + f"\nLoad latest model from disk..." + Style.RESET_ALL)
+        print(Fore.BLUE + f"\nLoad latest model from disk... ({most_recent_model_path_on_disk})" + Style.RESET_ALL)
 
         latest_model = keras.models.load_model(most_recent_model_path_on_disk)
 
