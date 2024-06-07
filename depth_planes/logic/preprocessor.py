@@ -254,9 +254,9 @@ def preprocess_h5_to_array(path: str, log_scale_near=10, log_scale_far=1, log_sc
 
 if __name__ == '__main__':
 
-    # preprocess_dataset()
+    preprocess_dataset()
     # X, y = preprocess_bulk()
-    preprocess_one_image('/home/mathieu/code/MathieuAmacher/depth-planes-from-2d/raw_data/h5/nyudepthv2_train_study_0008_00001.h5', '/home/mathieu/code/MathieuAmacher/depth-planes-from-2d/raw_data/depth', 'test' )
+    # preprocess_one_image('/home/mathieu/code/MathieuAmacher/depth-planes-from-2d/raw_data/h5/nyudepthv2_train_study_0008_00001.h5', '/home/mathieu/code/MathieuAmacher/depth-planes-from-2d/raw_data/depth', 'test' )
     # preprocess_img_to_array('/home/mathieu/code/MathieuAmacher/depth-planes-from-2d/raw_data/rgb/rgb_0001.png')
     # preprocess_mat_to_array('/home/jbo/code/soapoperator/depth-planes-from-2d/raw_data/make3d/depth/make3d_train_depth_depth_sph_corr-060705-17.10.14-p-018t000.mat')
     # preprocess_exr_to_array('/home/mathieu/code/MathieuAmacher/depth-planes-from-2d/raw_data/depth/depth_0001.exr')
