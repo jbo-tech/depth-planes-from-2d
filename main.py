@@ -54,11 +54,11 @@ def load_processed_data(split_ratio: float = 0.2):
 def train(X_train,
           y_train,
           learning_rate=0.01,
-          batch_size = 32,
-          patience = 20,
+          batch_size = 1,
+          patience = 30,
           validation_split = 0.2,
-          latent_dimension = 32,
-          epochs = 5000):
+          latent_dimension = 120,
+          epochs = 3000):
     """
     - Download processed data from buckets
     - Create train and test splits
@@ -143,7 +143,12 @@ def predict(X_pred: np.ndarray = None ) -> np.ndarray:
 
     y_pred = model.predict(X_pred)
 
-    print("\n✅ prediction done: ", y_pred.shape, "\n")
+    print("\n✅ Prediction done: ", y_pred.shape, "\n")
+
+    # Save y_pred locally as an .png image
+    save_predicted_image(y_pred=y_pred)
+
+    print("✅ Predicted images saved locally \n")
 
     return y_pred
 
@@ -152,4 +157,4 @@ if __name__ == '__main__':
     X_train, X_test, y_train, y_test = load_processed_data()
     train(X_train=X_train, y_train=y_train)
     evaluate(X_test=X_test, y_test=y_test)
-    #predict()
+    predict(X_pred=X_test)
