@@ -83,9 +83,10 @@ def train(X_train,
     model = load_model()
 
     if model is None:
-        encoder = build_encoder(latent_dimension=latent_dimension)
-        decoder = build_decoder(latent_dimension=latent_dimension)
-        model = build_autoencoder(encoder, decoder)
+        #encoder = build_encoder(latent_dimension=latent_dimension)
+        #decoder = build_decoder(latent_dimension=latent_dimension)
+        #model = build_autoencoder(encoder, decoder)
+        model = build_model()
 
         model = compile_autoencoder(autoencoder=model, learning_rate=learning_rate)
 
@@ -158,7 +159,8 @@ def predict(X_pred: np.ndarray = None ) -> np.ndarray:
     print("\n✅ Prediction done: ", y_pred.shape, "\n")
 
     # Save y_pred locally as an .png image
-    save_predicted_image(y_pred=y_pred)
+    timestamp = time.strftime("%Y%m%d-%H%M%S")
+    save_image(y_pred=y_pred, path=LOCAL_REGISTRY_IMG_PATH, name=timestamp)
 
     print("✅ Predicted images saved locally \n")
 

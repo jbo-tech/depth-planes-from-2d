@@ -118,19 +118,17 @@ def load_model() -> keras.Model:
 
             return None
 
-def save_predicted_image(y_pred: np.ndarray):
-
-    timestamp = time.strftime("%Y%m%d-%H%M%S")
+def save_image(y_pred: np.ndarray, path:str, name: str):
 
     for i in range(len(y_pred)):
-        pred_img_path=os.path.join(LOCAL_REGISTRY_IMG_PATH, f"{timestamp}_{i}.png")
+        pred_img_path=os.path.join(path, f"{name}_{i}.png")
         img = y_pred[i].reshape(128,256)
         img = img.astype('uint8')
         img = Image.fromarray(img)
         img.save(pred_img_path, format='PNG')
 
-    img_list = os.listdir(LOCAL_REGISTRY_IMG_PATH)
-    
+    img_list = os.listdir(path)
+
     return img_list
 
 
