@@ -16,6 +16,7 @@ IMAGE_SHAPE=os.environ.get("IMAGE_SHAPE")
 ROOT_DIRECTORY=os.path.dirname(os.path.realpath(__file__))
 LOCAL_DATA_PATH=os.path.join(ROOT_DIRECTORY, "raw_data")
 LOCAL_REGISTRY_PATH=os.path.join(ROOT_DIRECTORY, "saved_files")
+CHECKPOINT_PATH=os.path.join(ROOT_DIRECTORY, "saved_files")
 
 ##################  CLOUD STORAGE  ##############
 GCP_PROJECT=os.environ.get("GCP_PROJECT")
