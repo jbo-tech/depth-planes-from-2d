@@ -354,7 +354,7 @@ def get_blob_url(blob_prefix: str) -> str:
 
 if __name__ == '__main__':
     #get_blob_url('urbansyn/rgb/rgb_7539.png')
-    #gcp_list_files(prefix='urbansyn/rgb',extension=None)
+    #gcp_list_files(prefix='nyudepthv2/h5',extension=None)
     #download_chunks_concurrently('urbansyn/depth/depth_0001.exr', 'depth_0001.exr', chunk_size=64 * 1024 * 1024, workers=8)
     #download_many_blobs_with_transfer_manager(['make3d/test/depth/depth_sph_corr-op36-p-282t000.mat', 'make3d/test/depth/depth_sph_corr-op36-p-313t000.mat'], destination_directory="", workers=8)
     #upload_many_blobs_with_transfer_manager(['00019_00183_indoors_000_010_depth.npy','00019_00183_indoors_000_010_depth_mask.npy'], source_directory="/home/jbo/code/soapoperator/depth-planes-from-2d/raw_data/val/indoors/scene_00019/scan_00183", workers=8)
