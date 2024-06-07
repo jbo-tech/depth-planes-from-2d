@@ -2,10 +2,11 @@ import glob
 import os
 import time
 import pickle
-
+import numpy as np
 from colorama import Fore, Style #for color in terminal
 import keras
 from google.cloud import storage
+from PIL import Image
 
 
 from params import *
@@ -116,6 +117,17 @@ def load_model() -> keras.Model:
             print(f"\n❌ No model found in GCS bucket {BUCKET_NAME}")
 
             return None
+
+def save_predicted_image(y_pred: np.ndarray):
+
+    timestamp = time.strftime("%Y%m%d-%H%M%S")
+
+    for i in range(len(y_pred)):
+        pred_img_path=os.path.join(LOCAL_REGISTRY_PATH, 'predicted_img', f"{timestamp}_{i}.png")
+        img = y_pred[i].reshape(128,256)
+        img = img.astype('uint8')
+        img = Image.fromarray(img)
+        img.save(pred_img_path, format='PNG')
 
 if __name__ == '__main__':
     load_model()

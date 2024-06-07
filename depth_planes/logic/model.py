@@ -1,16 +1,17 @@
 import numpy as np
 from keras import models, layers, optimizers, losses, metrics, Sequential, Model, callbacks
+from params import *
 
 def build_encoder(latent_dimension):
     '''
     Returns an encoder model, of output_shape equals to latent_dimension
     '''
     encoder = Sequential([layers.Input((128,256,3)),
-                                 layers.Conv2D(8, (2,2), activation='relu'),
+                                 layers.Conv2D(32, (2,2), activation='relu'),
                                  layers.MaxPool2D(2),
                                  layers.Conv2D(16, (2,2), activation='relu'),
                                  layers.MaxPool2D(2),
-                                 layers.Conv2D(32, (2,2), activation='relu'),
+                                 layers.Conv2D(8, (2,2), activation='relu'),
                                  layers.MaxPool2D(2),
                                  layers.Flatten(),
                                  layers.Dense(latent_dimension, activation='tanh')
@@ -65,11 +66,11 @@ def train_model(
         model: Model,
         X: np.ndarray,
         y: np.ndarray,
-        batch_size=256,
-        patience=10,
-        epochs=500,
+        batch_size=1,
+        patience=50,
+        epochs=3000,
         validation_data=None, # overrides validation_split
-        validation_split=0.3):
+        validation_split=0.2):
     """
     Fit the model and return a tuple (fitted_model, history)
     """
@@ -79,6 +80,14 @@ def train_model(
         restore_best_weights=True,
         verbose=1
     )
+    checkpoint_filepath=os.path.join(CHECKPOINT_PATH, 'models', 'checkpoint.model.keras')
+
+    cp = callbacks.ModelCheckpoint(
+        filepath=checkpoint_filepath,
+        monitor='val_loss',
+        save_best_only=True,
+        save_freq='epoch'
+    )
 
     history = model.fit(
         X,
@@ -87,7 +96,7 @@ def train_model(
         validation_split=validation_split,
         epochs=epochs,
         batch_size=batch_size,
-        callbacks=[es],
+        callbacks=[es, cp],
         verbose=1
     )
 
