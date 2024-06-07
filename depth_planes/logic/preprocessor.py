@@ -191,11 +191,10 @@ def preprocess_exr_to_array(path, log_scale_near=10, log_scale_far=1, log_scale_
 
     img = cv2.imread(path, cv2.IMREAD_ANYCOLOR | cv2.IMREAD_ANYDEPTH)
 
-    img_normalized = img / np.max(img)
 
-    img_log_near = np.log1p(img_normalized * log_scale_near)
-    img_log_far = np.log1p(img_normalized * log_scale_far)
-    img_log_medium = np.log1p(img_normalized * log_scale_medium)
+    img_log_near = np.log1p(img * log_scale_near)
+    img_log_far = np.log1p(img * log_scale_far)
+    img_log_medium = np.log1p(img * log_scale_medium)
 
     img_log_combined = img_log_near * 0.33 + img_log_far * 0.33 + img_log_medium * 0.33
 
@@ -213,14 +212,9 @@ def preprocess_img_to_array(path: str) -> np.ndarray:
     """
     _summary_
     """
-    # print('**************************', path)
 
-    img = load_img(path)
-    load_image_to_array = img_to_array(img)
-    img_standardization = tf.image.per_image_standardization(load_image_to_array)
-    img_res = tf.image.resize(img_standardization, [(eval(IMAGE_SHAPE)[0]), (eval(IMAGE_SHAPE)[1])], preserve_aspect_ratio=True)
-
-    # print('**********************', img_x)
+    img_norm_array = img_to_array(load_img(path))/255
+    img_res = tf.image.resize(img_norm_array, [(eval(IMAGE_SHAPE)[0]), (eval(IMAGE_SHAPE)[1])], preserve_aspect_ratio=True)
     return img_res
 
 
@@ -238,17 +232,15 @@ def preprocess_h5_to_array(path: str, log_scale_near=10, log_scale_far=1, log_sc
     h5 = h5py.File(path, 'r')
 
     h5_rgb = h5['rgb']
-    h5_rgb_r = np.moveaxis(h5_rgb, 0, -1)
-    img_standardization = tf.image.per_image_standardization(h5_rgb_r)
-    h5_rgb_res = tf.image.resize(img_standardization, [(eval(IMAGE_SHAPE)[0]), (eval(IMAGE_SHAPE)[1])], preserve_aspect_ratio=False)
+    h5_rgb_r = (np.moveaxis(h5_rgb, 0, -1))/255
+    h5_rgb_res = tf.image.resize(h5_rgb_r, [(eval(IMAGE_SHAPE)[0]), (eval(IMAGE_SHAPE)[1])], preserve_aspect_ratio=False)
 
-    h5_depth = h5['depth']
-    img_normalized = h5_depth / np.max(h5_depth)
-    img_log_near = np.log1p(img_normalized * log_scale_near)
-    img_log_far = np.log1p(img_normalized * log_scale_far)
-    img_log_medium = np.log1p(img_normalized * log_scale_medium)
+    h5_depth = h5['depth'][:]
+    img_log_near = np.log1p(h5_depth * log_scale_near)
+    img_log_far = np.log1p(h5_depth * log_scale_far)
+    img_log_medium = np.log1p(h5_depth * log_scale_medium)
     img_log_combined = img_log_near * 0.33 + img_log_far * 0.33 + img_log_medium * 0.33
-    res = cv2.resize(img_log_combined, dsize=((eval(IMAGE_SHAPE)[1]), (eval(IMAGE_SHAPE)[0])), interpolation=cv2.INTER_CUBIC)
+    res = cv2.resize(img_log_combined, dsize=[(eval(IMAGE_SHAPE)[1]), (eval(IMAGE_SHAPE)[0])], interpolation=cv2.INTER_CUBIC)
     h5_depth_res = np.expand_dims(res, axis=-1)
 
     return h5_rgb_res, h5_depth_res
@@ -262,10 +254,10 @@ def preprocess_h5_to_array(path: str, log_scale_near=10, log_scale_far=1, log_sc
 
 if __name__ == '__main__':
 
-    preprocess_dataset()
+    # preprocess_dataset()
     # X, y = preprocess_bulk()
-    # preprocess_one_image('/home/mathieu/code/MathieuAmacher/depth-planes-from-2d/raw_data/h5/nyudepthv2_train_study_0008_00001.h5', '/home/mathieu/code/MathieuAmacher/depth-planes-from-2d/raw_data/h5/')
-    # preprocess_img_to_array('../../raw_data/rgb/rgb_0001.png')
+    preprocess_one_image('/home/mathieu/code/MathieuAmacher/depth-planes-from-2d/raw_data/h5/nyudepthv2_train_study_0008_00001.h5', '/home/mathieu/code/MathieuAmacher/depth-planes-from-2d/raw_data/depth', 'test' )
+    # preprocess_img_to_array('/home/mathieu/code/MathieuAmacher/depth-planes-from-2d/raw_data/rgb/rgb_0001.png')
     # preprocess_mat_to_array('/home/jbo/code/soapoperator/depth-planes-from-2d/raw_data/make3d/depth/make3d_train_depth_depth_sph_corr-060705-17.10.14-p-018t000.mat')
-    # preprocess_exr_to_array('../../raw_data/depth/depth_0005.exr')
-    #preprocess_h5_to_array('/home/mathieu/code/MathieuAmacher/depth-planes-from-2d/raw_data/h5/nyudepthv2_train_basement_0001b_00001.h5')
+    # preprocess_exr_to_array('/home/mathieu/code/MathieuAmacher/depth-planes-from-2d/raw_data/depth/depth_0001.exr')
+    # preprocess_h5_to_array('/home/mathieu/code/MathieuAmacher/depth-planes-from-2d/raw_data/h5/nyudepthv2_train_study_0008_00001.h5')
