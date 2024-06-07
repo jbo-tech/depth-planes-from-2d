@@ -129,5 +129,10 @@ def save_predicted_image(y_pred: np.ndarray):
         img = Image.fromarray(img)
         img.save(pred_img_path, format='PNG')
 
+    img_list = os.listdir(LOCAL_REGISTRY_IMG_PATH)
+    
+    return img_list
+
+
 if __name__ == '__main__':
     load_model()
