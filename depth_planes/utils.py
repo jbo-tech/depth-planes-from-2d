@@ -1,16 +1,39 @@
 import os
-from google.cloud import storage
+import requests
+import mimetypes
+from params import *
 
-def list_blobs(bucket_name: str):
-    """
-    Lists all the blobs in the bucket.
-    """
+def download_image(image_url: str,
+  file_dir: str,
+  name: str):
+  """
+  Save loccaly an image from url.
 
-    storage_client = storage.Client()
+  Args:
+      image_url (str): _description_
+      file_dir (str): _description_
+      name (str): _description_
+  """
 
-    # Note: Client.list_blobs requires at least package version 1.17.0.
-    blobs = storage_client.list_blobs(bucket_name)
+  response = requests.get(image_url)
+  extension = mimetypes.guess_extension(response.headers.get('content-type', '').split(';')[0])
 
-    # Note: The call returns a response only when the iterator is consumed.
-    for blob in blobs:
-        print(blob.name)
+  if response.status_code == 200:
+      directory = os.path.dirname(file_dir)
+      if not os.path.exists(directory):
+          os.makedirs(directory)
+
+      local_path = "{}/{}{}".format(file_dir,name,extension)
+
+      with open(local_path, "wb") as fp:
+          fp.write(response.content)
+
+      return local_path, extension
+
+      print(f"Image downloaded successfully at {file_dir}.")
+  else:
+      print(f"Failed to download the image. Status code: {response.status_code}")
+
+
+if __name__ == '__main__':
+  download_image('https://blog.apify.com/content/images/2023/12/logo-dark.svg', LOCAL_DATA_PATH, 'test')
