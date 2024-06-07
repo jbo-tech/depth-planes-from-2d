@@ -23,13 +23,13 @@ def save_results(params: dict, metrics: dict) -> None:
 
     # Save params locally
     if params is not None:
-        params_path = os.path.join(LOCAL_REGISTRY_PATH, "params", params['context'] + '-' + timestamp + ".pickle")
+        params_path = os.path.join(LOCAL_REGISTRY_PARAMS_PATH, params['context'] + '-' + timestamp + ".pickle")
         with open(params_path, "wb") as file:
             pickle.dump(params, file)
 
     # Save metrics locally
     if metrics is not None:
-        metrics_path = os.path.join(LOCAL_REGISTRY_PATH, "metrics", metrics['context'] + '-' + timestamp + ".pickle")
+        metrics_path = os.path.join(LOCAL_REGISTRY_METRICS_PATH, metrics['context'] + '-' + timestamp + ".pickle")
         with open(metrics_path, "wb") as file:
             pickle.dump(metrics, file)
 
@@ -46,7 +46,7 @@ def save_model(model: keras.Model = None) -> None:
     timestamp = time.strftime("%Y%m%d-%H%M%S")
 
     # Save model locally
-    model_path = os.path.join(LOCAL_REGISTRY_PATH, "models", f"{timestamp}.keras")
+    model_path = os.path.join(LOCAL_REGISTRY_MODEL_PATH, f"{timestamp}.keras")
     model.save(model_path)
 
     print("✅ Model saved locally")
@@ -80,7 +80,7 @@ def load_model() -> keras.Model:
         print(Fore.BLUE + f"\nLoad latest model from local registry..." + Style.RESET_ALL)
 
         # Get the latest model version name by the timestamp on disk
-        local_model_directory = os.path.join(LOCAL_REGISTRY_PATH, "models")
+        local_model_directory = LOCAL_REGISTRY_MODEL_PATH
         local_model_paths = glob.glob(f"{local_model_directory}/*")
 
         if not local_model_paths:
@@ -123,7 +123,7 @@ def save_predicted_image(y_pred: np.ndarray):
     timestamp = time.strftime("%Y%m%d-%H%M%S")
 
     for i in range(len(y_pred)):
-        pred_img_path=os.path.join(LOCAL_REGISTRY_PATH, 'predicted_img', f"{timestamp}_{i}.png")
+        pred_img_path=os.path.join(LOCAL_REGISTRY_IMG_PATH, f"{timestamp}_{i}.png")
         img = y_pred[i].reshape(128,256)
         img = img.astype('uint8')
         img = Image.fromarray(img)

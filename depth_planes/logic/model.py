@@ -80,7 +80,7 @@ def train_model(
         restore_best_weights=True,
         verbose=1
     )
-    checkpoint_filepath=os.path.join(CHECKPOINT_PATH, 'models', 'checkpoint.model.keras')
+    checkpoint_filepath=os.path.join(LOCAL_REGISTRY_CHECKPOINT_PATH, 'checkpoints', 'checkpoint.model.keras')
 
     cp = callbacks.ModelCheckpoint(
         filepath=checkpoint_filepath,
