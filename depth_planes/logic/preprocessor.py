@@ -252,9 +252,9 @@ def preprocess_h5_to_array(path: str, log_scale_near=10, log_scale_far=1, log_sc
 
 
 
-#if __name__ == '__main__':
+if __name__ == '__main__':
 
-    #preprocess_dataset()
+    preprocess_dataset()
     # X, y = preprocess_bulk()
     # preprocess_one_image('/home/mathieu/code/MathieuAmacher/depth-planes-from-2d/raw_data/h5/nyudepthv2_train_study_0008_00001.h5', '/home/mathieu/code/MathieuAmacher/depth-planes-from-2d/raw_data/depth', 'test' )
     # preprocess_img_to_array('/home/mathieu/code/MathieuAmacher/depth-planes-from-2d/raw_data/rgb/rgb_0001.png')
