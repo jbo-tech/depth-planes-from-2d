@@ -91,7 +91,7 @@ def build_model(input_shape=(128, 256, 3)):
     c9 = layers.Conv2D(64, (3, 3), activation='relu', padding='same')(u9)
     c9 = layers.Conv2D(64, (3, 3), activation='relu', padding='same')(c9)
 
-    outputs = layers.Conv2D(1, (1, 1), activation='sigmoid')(c9)
+    outputs = layers.Conv2D(5, (1, 1), activation='softmax')(c9)
 
     model = models.Model(inputs=[inputs], outputs=[outputs])
 

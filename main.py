@@ -220,9 +220,9 @@ def predict_and_save_DPTForDepthEstimation(image_path, path=LOCAL_REGISTRY_IMG_P
 
 
 if __name__ == '__main__':
-    #preprocess()
-    #X_train, X_test, y_train, y_test = load_processed_data()
-    #train(X_train=X_train, y_train=y_train)
-    #evaluate(X_test=X_test, y_test=y_test)
-    #predict(X_pred=X_test)
-    predict_and_save_DPTForDepthEstimation()
+    preprocess()
+    X_train, X_test, y_train, y_test = load_processed_data()
+    train(X_train=X_train, y_train=y_train)
+    evaluate(X_test=X_test, y_test=y_test)
+    predict(X_pred=X_test)
+    #predict_and_save_DPTForDepthEstimation(image_path="/Users/leslierolland/code/soapoperator/depth-planes-from-2d/raw_data/photo_test/urbansyn_rgb_rgb_0034.png")
