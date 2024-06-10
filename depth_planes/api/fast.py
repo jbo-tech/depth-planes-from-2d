@@ -1,6 +1,7 @@
 # Preprocessing
 ##
 from params import *
+from main import predict_and_save_DPTForDepthEstimation
 from depth_planes.utils import *
 from depth_planes.logic.registry import *
 from depth_planes.logic.preprocessor import *
@@ -64,29 +65,33 @@ async def depth(
     if not os.path.exists(image_cache_path):
         return {"error": "Image not found on the server"}
 
-    model = app.state.model
-    assert model is not None
+    if API_MODEL == local:
 
-    X_processed_path = preprocess_one_image(image_cache_path, cache_folder, 'cache')
-    X_processed = np.expand_dims(get_npy_direct(X_processed_path),axis=0)
-    #print(X_processed.shape)
-    y_pred = model.predict(X_processed)
-    #print(y_pred)
+        model = app.state.model
+        assert model is not None
 
-    all_path_pred = save_image(y_pred, cache_folder_preprocessed, filename)
-    path_pred = [x for x in all_path_pred if x.startswith(filename)][0]
+        X_processed_path = preprocess_one_image(image_cache_path, cache_folder, 'cache')
+        X_processed = np.expand_dims(get_npy_direct(X_processed_path),axis=0)
+        #print(X_processed.shape)
+        y_pred = model.predict(X_processed)
+        #print(y_pred)
 
+        all_path_pred = save_image(y_pred, cache_folder_preprocessed, filename)
+        pred_img_path = [x for x in all_path_pred if x.startswith(filename)][0]
+
+    elif API_MODEL == hf:
+
+        y_pred, pred_img_path = predict_and_save_DPTForDepthEstimation(image_cache_path, path=cache_folder_preprocessed)
 
     # ⚠️ fastapi only accepts simple Python data types as a return value
     # among them dict, list, str, int, float, bool
     # in order to be able to convert the api response to JSON
     return dict(
-        url=path_pred, # Url of the depth map
+        url=pred_img_path, # Url of the depth map
         data=json.dumps(y_pred.tolist()) # The array of the depth map
         )
 
     # $CHA_END
-
 
 # http://127.0.0.1:8000/slice?url=https://placehold.co/600x400&nb_planes=10
 @app.get("/slices")

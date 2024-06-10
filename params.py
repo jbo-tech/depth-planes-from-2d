@@ -37,3 +37,6 @@ PATIENCE=int(os.environ.get("PATIENCE"))
 VALIDATION_SPLIT=float(os.environ.get("VALIDATION_SPLIT"))
 LATENT_DIMENSION=int(os.environ.get("LATENT_DIMENSION"))
 EPOCHS=int(os.environ.get("EPOCHS"))
+
+##################  API  #############
+API_MODEL=os.environ.get("API_MODEL")

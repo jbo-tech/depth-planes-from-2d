@@ -173,15 +173,15 @@ def predict(X_pred: np.ndarray = None ) -> np.ndarray:
 
     # Save y_pred locally as an .png image
     timestamp = time.strftime("%Y%m%d-%H%M%S")
-    save_image(y_pred=y_pred, path=LOCAL_REGISTRY_IMG_PATH, name=timestamp)
+    pred_img_path = save_image(y_pred=y_pred, path=LOCAL_REGISTRY_IMG_PATH, name=timestamp)
 
     print("✅ Predicted images saved locally \n")
 
-    return y_pred
+    return y_pred, pred_img_path
 
 
 ### Make a prediction with Hugging Face model
-def predict_and_save_DPTForDepthEstimation(image_path, path=LOCAL_REGISTRY_IMG_PATH): # --> returns y_pred
+def predict_and_save_DPTForDepthEstimation(image_path, path=LOCAL_REGISTRY_IMG_PATH): # --> returns pred_img_path
 
     #image_url = "/Users/leslierolland/code/soapoperator/depth-planes-from-2d/raw_data/photo_test/urbansyn_rgb_rgb_0034.png"
     image = Image.open(image_path)
@@ -216,7 +216,7 @@ def predict_and_save_DPTForDepthEstimation(image_path, path=LOCAL_REGISTRY_IMG_P
 
     print("\n✅ Prediction done: ", formatted.shape, "\n")
 
-    return formatted
+    return depth, pred_img_path
 
 
 if __name__ == '__main__':
@@ -225,4 +225,4 @@ if __name__ == '__main__':
     #train(X_train=X_train, y_train=y_train)
     #evaluate(X_test=X_test, y_test=y_test)
     #predict(X_pred=X_test)
-    #predict_and_save_DPTForDepthEstimation(image_path="/Users/leslierolland/code/soapoperator/depth-planes-from-2d/raw_data/photo_test/urbansyn_rgb_rgb_0034.png")
+    predict_and_save_DPTForDepthEstimation()
