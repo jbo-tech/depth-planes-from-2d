@@ -169,3 +169,4 @@ notebooks/*/
 .DS_Store
 saved_files/
 notebooks/*.md
+notebooks/*.sh

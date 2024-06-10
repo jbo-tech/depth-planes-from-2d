@@ -256,9 +256,6 @@ def preprocess_npy_to_array(path: str) -> np.ndarray:
     return npy_res
 
 
-
-
-
 if __name__ == '__main__':
 
     preprocess_dataset()

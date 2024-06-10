@@ -42,6 +42,23 @@ def get_npy(path: str) -> np.array:
     #print(response)
     return response
 
+
+def get_npy_direct(path_direct: str) -> np.array:
+    """
+    _summary_
+
+    Args:
+        path (str): _description_
+
+    Returns:
+        np.array: _description_
+    """
+    npy = np.load(path_direct)
+
+    #print(response)
+    return npy
+
+
 def local_save_data(file_array: str, name:str, path: str):
     """
     Save np.array to a npy file in a bucket and a specific folder

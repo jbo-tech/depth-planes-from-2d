@@ -24,7 +24,7 @@ app.add_middleware(
 
 ### Check if the necessary folders exist
 cache_folder = os.path.join(LOCAL_DATA_PATH, "cache")
-cache_folder_preprocessed = os.path.join(LOCAL_DATA_PATH, "cache", "preprocessed")
+cache_folder_preprocessed = os.path.join(LOCAL_DATA_PATH, "cache", "_preprocessed")
 if not os.path.exists(cache_folder):
     os.makedirs(cache_folder)
 if not os.path.exists(cache_folder_preprocessed):
@@ -57,7 +57,7 @@ async def depth(
 
     #print(image_cache_path,image_cache_size,image_cache_extension)
 
-    if not image_cache_extension is in ['jpg','jpeg','png']:
+    if image_cache_extension[1:] not in ['jpg','jpeg','png']:
         raise ValueError("Please send an image.")
 
     if not os.path.exists(image_cache_path):
@@ -67,18 +67,18 @@ async def depth(
     assert model is not None
 
     X_processed_path = preprocess_one_image(image_cache_path, cache_folder, 'cache')
-    X_processed = get_npy(X_processed_path)[0]
+    X_processed = np.expand_dims(get_npy_direct(X_processed_path),axis=0)
+    #print(X_processed.shape)
     y_pred = model.predict(X_processed)
+    #print(y_pred)
 
-    path_pred = save_image(y_pred, cache_folder_preprocessed, filename)
-
-    #return image_cache_path
+    #path_pred = save_image(y_pred, cache_folder_preprocessed, filename)
 
     # ⚠️ fastapi only accepts simple Python data types as a return value
     # among them dict, list, str, int, float, bool
     # in order to be able to convert the api response to JSON
     return dict(
-        url=path_pred, # Url of the depth map
+        url="path_pred", # Url of the depth map
         data=y_pred # The array of the depth map
         )
 
