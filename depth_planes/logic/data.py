@@ -100,8 +100,8 @@ def gcp_list_files(prefix=None,extension=None):
     Summary
     """
     #
-    client = storage.Client(project=GCP_PROJECT)
-    bucket = client.bucket(BUCKET_NAME)
+    client = storage.Client(project=GCP_PROJECT_OLD)
+    bucket = client.bucket(BUCKET_NAME_OLD)
 
     #
     blobs = bucket.list_blobs(prefix=prefix)
@@ -154,8 +154,8 @@ def download_many_blobs_with_transfer_manager(
 
     from google.cloud.storage import Client, transfer_manager
 
-    storage_client = Client(project=GCP_PROJECT)
-    bucket = storage_client.bucket(BUCKET_NAME)
+    storage_client = Client(project=GCP_PROJECT_OLD)
+    bucket = storage_client.bucket(BUCKET_NAME_OLD)
 
     results = transfer_manager.download_many_to_path(
         bucket, blob_names, destination_directory=destination_directory, max_workers=workers
@@ -200,8 +200,8 @@ def download_chunks_concurrently(
 
     from google.cloud.storage import Client, transfer_manager
 
-    storage_client = Client(project=GCP_PROJECT)
-    bucket = storage_client.bucket(BUCKET_NAME)
+    storage_client = Client(project=GCP_PROJECT_OLD)
+    bucket = storage_client.bucket(BUCKET_NAME_OLD)
     blob = bucket.blob(blob_name)
 
     transfer_manager.download_chunks_concurrently(

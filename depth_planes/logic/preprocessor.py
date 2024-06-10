@@ -149,7 +149,7 @@ def preprocess_bulk(files: list, path_preprocessed: str, dataset_prefix: str):
                 logging.error(f"Unexpected {NameError}, {TypeError} ({RuntimeError})\n{f}")
 
         # Clean the tmp folder
-        clean_data(tmp_folder)
+        # clean_data(tmp_folder)
 
     return "Preprocess local: Ok"
 

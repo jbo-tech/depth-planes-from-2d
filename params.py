@@ -23,6 +23,10 @@ LOCAL_REGISTRY_IMG_PATH=os.path.join(LOCAL_REGISTRY_PATH, 'predicted_img')
 LOCAL_REGISTRY_CHECKPOINT_PATH=os.path.join(LOCAL_REGISTRY_PATH, 'checkpoints')
 
 ##################  CLOUD STORAGE  ##############
+GCP_PROJECT_OLD=os.environ.get("GCP_PROJECT_OLD")
+GCP_REGION_OLD=os.environ.get("GCP_REGION_OLD")
+BUCKET_NAME_OLD=os.environ.get("BUCKET_NAME_OLD")
+
 GCP_PROJECT=os.environ.get("GCP_PROJECT")
 GCP_REGION=os.environ.get("GCP_REGION")
 BUCKET_NAME=os.environ.get("BUCKET_NAME")
