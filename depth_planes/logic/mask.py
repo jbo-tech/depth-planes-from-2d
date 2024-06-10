@@ -22,6 +22,25 @@ def create_mask(y_pred, nb_mask: int =None) -> np.array:
 
     return
 
+def create_mask_in_one(y_pred, nb_mask: int =None) -> np.array:
+    """
+    Function to create an array representing categorical mask
+
+    Input:
+    y_pred.shape -> (128,256,1)
+    """
+
+    slice_ = np.max(y_pred)/nb_mask
+    img_dim = np.squeeze(y_pred, axis=-1) #reduce the dim
+    mask = np.full((nb_mask,img_dim.shape[0],img_dim.shape[1]),2)
+
+    for i in np.arange(1, nb_mask+1):
+        mask[i-1] = np.where((img_dim>=(i-1)*slice_) & (img_dim<i*slice_), i, 0)
+
+    mask = mask.sum(axis=0)
+
+    return mask
+
 def apply_mask(x, mask:np.array) -> np.array:
     """
     Function to apply mask on the reel image X
