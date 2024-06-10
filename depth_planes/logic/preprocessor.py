@@ -21,19 +21,25 @@ import logging
 
 logging.basicConfig(filename=f"{ROOT_DIRECTORY}/depth_planes.log",
                     format='%(asctime)s %(message)s',
-                    filemode='w')
+                    filemode='a')
 logger = logging.getLogger()
-logger.setLevel(logging.INFO)
+logger.setLevel(logging.ERROR)
+
+### Check if the necessary folders exist
+preprocessed_folder = os.path.join(LOCAL_DATA_PATH, "ok","_preprocessed")
+preprocessed_folder_X = os.path.join(LOCAL_DATA_PATH, "ok","_preprocessed","X")
+preprocessed_folder_y = os.path.join(LOCAL_DATA_PATH, "ok","_preprocessed","y")
+tmp_folder = os.path.join(LOCAL_DATA_PATH, "tmp")
+if not os.path.exists(LOCAL_DATA_PATH):
+    os.makedirs(LOCAL_DATA_PATH)
+if not os.path.exists(preprocessed_folder):
+    os.makedirs(preprocessed_folder)
+if not os.path.exists(preprocessed_folder_X):
+    os.makedirs(preprocessed_folder_X)
+if not os.path.exists(preprocessed_folder_y):
+    os.makedirs(preprocessed_folder_y)
 
 def preprocess_dataset():
-    preprocess_folder = Path(LOCAL_DATA_PATH).joinpath("ok","_preprocessed")
-
-    if not os.path.exists(preprocess_folder):
-        os.makedirs(preprocess_folder)
-
-    logger.info(f'\n\n🚩 Preprocess : start!')
-
-    start = time.time()
 
     if eval(DATA_URBANSYN) == True:
         X_path="urbansyn/rgb"
@@ -42,8 +48,8 @@ def preprocess_dataset():
         X_file_list = gcp_list_files(X_path)
         y_file_list = gcp_list_files(y_path)
 
-        preprocess_bulk( X_file_list,str(preprocess_folder) + "/X",'urbansyn')
-        preprocess_bulk( y_file_list,str(preprocess_folder) + "/y",'urbansyn')
+        preprocess_bulk( X_file_list,str(preprocessed_folder_X),'urbansyn')
+        preprocess_bulk( y_file_list,str(preprocessed_folder_y),'urbansyn')
 
     if eval(DATA_MAKE3D) == True:
         X_path="make3d/rgb"
@@ -52,8 +58,8 @@ def preprocess_dataset():
         X_file_list = gcp_list_files(X_path)
         y_file_list = gcp_list_files(y_path)
 
-        preprocess_bulk( X_file_list,str(preprocess_folder) + "/X",'make3d')
-        preprocess_bulk( y_file_list,str(preprocess_folder) + "/y",'make3d')
+        preprocess_bulk( X_file_list,str(preprocessed_folder_X),'make3d')
+        preprocess_bulk( y_file_list,str(preprocessed_folder_y),'make3d')
 
     if eval(DATA_DIODE) == True:
         X_path="diode/rgb"
@@ -62,8 +68,8 @@ def preprocess_dataset():
         X_file_list = gcp_list_files(X_path)
         y_file_list = gcp_list_files(y_path)
 
-        preprocess_bulk( X_file_list,str(preprocess_folder) + "/X",'diode')
-        preprocess_bulk( y_file_list,str(preprocess_folder) + "/y",'diode')
+        preprocess_bulk( X_file_list,str(preprocessed_folder_X),'diode')
+        preprocess_bulk( y_file_list,str(preprocessed_folder_y),'diode')
 
     if eval(DATA_MEGADEPTH) == True:
         X_path="megadepth/rgb"
@@ -72,8 +78,8 @@ def preprocess_dataset():
         X_file_list = gcp_list_files(X_path)
         y_file_list = gcp_list_files(y_path)
 
-        preprocess_bulk( X_file_list,str(preprocess_folder) + "/X",'megadepth')
-        preprocess_bulk( y_file_list,str(preprocess_folder) + "/y",'megadepth')
+        preprocess_bulk( X_file_list,str(preprocessed_folder_X),'megadepth')
+        preprocess_bulk( y_file_list,str(preprocessed_folder_y),'megadepth')
 
     if eval(DATA_DIMLRGBD) == True:
         X_path="dimlrgbd/rgb"
@@ -82,53 +88,49 @@ def preprocess_dataset():
         X_file_list = gcp_list_files(X_path)
         y_file_list = gcp_list_files(y_path)
 
-        preprocess_bulk( X_file_list,str(preprocess_folder) + "/X",'dimlrgbd')
-        preprocess_bulk( y_file_list,str(preprocess_folder) + "/y",'dimlrgbd')
+        preprocess_bulk( X_file_list,str(preprocessed_folder_X),'dimlrgbd')
+        preprocess_bulk( y_file_list,str(preprocessed_folder_y),'dimlrgbd')
 
     if eval(DATA_NYUDEPTHV2) == True:
         nyudepthv2_path="nyudepthv2/h5"
 
         nyudepthv2_file_list = gcp_list_files(nyudepthv2_path)
 
-        preprocess_bulk( nyudepthv2_file_list, str(preprocess_folder),'nyudepthv2')
+        preprocess_bulk( nyudepthv2_file_list, str(preprocessed_folder),'nyudepthv2')
 
     # Upload tmp files
-    #upload_directory_with_transfer_manager(source_directory=str(os.path.dirname(preprocess_folder)), workers=8)
+    upload_directory_with_transfer_manager(source_directory=str(os.path.dirname(preprocessed_folder)), workers=8)
 
-    end = time.time()
-    logger.info(f'\n\n✅ Preprocess : ok! ({time.strftime("%H:%M:%S", time.gmtime(end - start))})\n############################################')
-    #print(f'\n✅ Preprocess ({time.strftime("%H:%M:%S", time.gmtime(end - start))})')
-
-def preprocess_bulk(files: list, preprocess_path: str, dataset_prefix: str):
+def preprocess_bulk(files: list, path_preprocessed: str, dataset_prefix: str):
     """
     _summary_
 
     Args:
         files (list): _description_
-        preprocess_path (str): _description_
+        path_preprocessed (str): _description_
         dataset_prefix (str): _description_
 
     Returns:
         _type_: _description_
     """
 
-    #print(files)
+    nb_files_to_download = len(files)
+    preprocessed_path_check = path_preprocessed if path_preprocessed.endswith(('/X','/y')) else str(preprocessed_folder_X)
+    nb_files_preprocessed = len([x for x in local_list_files(preprocessed_path_check) if x.startswith(dataset_prefix)])
+    files = files if nb_files_preprocessed == 0 else files[nb_files_preprocessed + 1:]
 
     # Parameters
     PREPROCESS_CHUNK_SIZE=200
-    tmp_folder = os.path.join(LOCAL_DATA_PATH, "tmp")
     bucket_size = round(len(files) / PREPROCESS_CHUNK_SIZE)
-    #bucket_size = 4
+    #bucket_size = 2
 
-    print(f'Files to download : {len(files)} in {bucket_size}')
-    logger.info(f'\n\nFiles to download : {len(files)} in {bucket_size}\n############################################')
-
-    if not os.path.exists(tmp_folder):
-        os.makedirs(tmp_folder)
-
-    # print(tmp_folder)
+    print(f'Files to download : {len(files)} in {bucket_size} buckets.')
+    logger.info(f'\n\nFiles to download : {len(files)} in {bucket_size} buckets.\n############################################')
 
     for i in range(bucket_size):
+
+        if not os.path.exists(tmp_folder):
+            os.makedirs(tmp_folder)
 
         # Donwload a chunk
         chunk_start = i * PREPROCESS_CHUNK_SIZE if i > 0 else 1 # Remove the folder from the list
@@ -141,7 +143,10 @@ def preprocess_bulk(files: list, preprocess_path: str, dataset_prefix: str):
         #print(files_in_tmp)
         for f in files_in_tmp:
             print(f'Preprocessing : {f}')
-            preprocess_one_image(f,preprocess_path,dataset_prefix)
+            try:
+                preprocess_one_image(f,path_preprocessed,dataset_prefix)
+            except (RuntimeError, TypeError, NameError):
+                logging.error(f"Unexpected {NameError}, {TypeError} ({RuntimeError})\n{f}")
 
         # Clean the tmp folder
         clean_data(tmp_folder)
@@ -163,22 +168,20 @@ def preprocess_one_image(path_original: str, path_destination: str, dataset_pref
     if not os.path.exists(path_destination):
         os.makedirs(path_destination)
 
-    #print(path_destination)
-
     path_ext = path_original.split('.')[-1]
-    #print(path_ext)
-    name = dataset_prefix + "_" + path_original.split('/')[-1].split('.')[-2]+'_pre'
-    #path_pre = 'raw_data/'+path.split('/')[-2]
-
+    name = dataset_prefix + "_" + os.path.splitext(path_original)[0].split('/')[-1] +'_pre'
 
     if path_ext == 'exr':
         pre = preprocess_exr_to_array(path_original) # Return np.array
         return local_save_data(pre, path=path_destination, name=name)
-    elif path_ext =='h5':
+    elif path_ext == 'h5':
         rgb_res, depth_res = preprocess_h5_to_array(path_original)
-        rgb_path = local_save_data(rgb_res, name=name+'_rgb', path=f"{path_destination}/X")
-        depth_path = local_save_data(depth_res, name=name+'_depth', path=f"{path_destination}/y")
+        rgb_path = local_save_data(rgb_res, name=name+'_rgb', path=str(preprocessed_folder_X))
+        depth_path = local_save_data(depth_res, name=name+'_depth', path=str(preprocessed_folder_y))
         return rgb_path, depth_path
+    elif path_ext == 'npy':
+        pre = preprocess_npy_to_array(path_original)
+        return local_save_data(pre, path=path_destination, name=name)
     else:
         pre = preprocess_img_to_array(path_original)
         return local_save_data(pre, path=path_destination, name=name)
@@ -216,7 +219,7 @@ def preprocess_img_to_array(path: str) -> np.ndarray:
     """
 
     img_norm_array = img_to_array(load_img(path))/255
-    img_res = tf.image.resize(img_norm_array, [(eval(IMAGE_SHAPE)[0]), (eval(IMAGE_SHAPE)[1])], preserve_aspect_ratio=True)
+    img_res = tf.image.resize(img_norm_array, [(eval(IMAGE_SHAPE)[0]), (eval(IMAGE_SHAPE)[1])], preserve_aspect_ratio=False)
     return img_res
 
 
@@ -249,13 +252,14 @@ def preprocess_h5_to_array(path: str, log_scale=1000, coef=50000) -> np.ndarray:
     cat_img = create_mask_in_one(res, nb_mask= 5)
 
     h5_depth_res = np.expand_dims(cat_img, axis=-1)
-
-
-
     return h5_rgb_res, h5_depth_res
 
 
-
+def preprocess_npy_to_array(path: str) -> np.ndarray:
+    npy_original = np.load(path).astype('uint16')
+    npy_res = cv2.resize(npy_original, dsize=[(eval(IMAGE_SHAPE)[1]), (eval(IMAGE_SHAPE)[0])], interpolation=cv2.INTER_CUBIC)
+    npy_res =  np.expand_dims(npy_res,axis=2) if np.array(npy_res).ndim == 2 else np.array(npy_res)
+    return npy_res
 
 
 

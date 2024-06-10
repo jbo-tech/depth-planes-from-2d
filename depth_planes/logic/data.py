@@ -42,6 +42,23 @@ def get_npy(path: str) -> np.array:
     #print(response)
     return response
 
+
+def get_npy_direct(path_direct: str) -> np.array:
+    """
+    _summary_
+
+    Args:
+        path (str): _description_
+
+    Returns:
+        np.array: _description_
+    """
+    npy = np.load(path_direct)
+
+    #print(response)
+    return npy
+
+
 def local_save_data(file_array: str, name:str, path: str):
     """
     Save np.array to a npy file in a bucket and a specific folder
@@ -53,6 +70,7 @@ def local_save_data(file_array: str, name:str, path: str):
 
     # Create and save the npy file
     file_path = f'{path}/{name}.npy'
+    #print(file_path)
     np.save(file_path, file_array)
 
     return file_path
@@ -317,7 +335,7 @@ def upload_directory_with_transfer_manager(source_directory, workers=8):
     # Finally, convert them all to strings.
     string_paths = [str(path) for path in relative_paths]
 
-    print("\nFound {} files.".format(len(string_paths)))
+    print("\nFound {} files to upload.".format(len(string_paths)))
 
     # Start the upload.
     results = transfer_manager.upload_many_from_filenames(

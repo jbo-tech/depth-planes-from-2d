@@ -15,7 +15,7 @@ import logging
 
 logging.basicConfig(filename="depth_planes.log",
                     format='%(asctime)s %(message)s',
-                    filemode='w')
+                    filemode='a')
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 
@@ -41,7 +41,15 @@ def preprocess():
     - Process query data
     - Store processed data on new bucket
     """
+
+    logger.info(f'\n\n🚩 Preprocess : start!')
+
+    start = time.time()
+
     preprocess_dataset()
+
+    end = time.time()
+    logger.info(f'\n\n✅ Preprocess : ok! ({time.strftime("%H:%M:%S", time.gmtime(end - start))})\n############################################')
 
     print("✅ preprocess() done \n")
 
@@ -90,6 +98,8 @@ def train(X_train,
         #decoder = build_decoder(latent_dimension=latent_dimension)
         #model = build_autoencoder(encoder, decoder)
         model = build_model()
+
+        logger.info(f'\n\nNew model:\n{model.summary()}\n############################################')
 
         model = compile_autoencoder(autoencoder=model, learning_rate=learning_rate)
 
@@ -163,15 +173,15 @@ def predict(X_pred: np.ndarray = None ) -> np.ndarray:
 
     # Save y_pred locally as an .png image
     timestamp = time.strftime("%Y%m%d-%H%M%S")
-    save_image(y_pred=y_pred, path=LOCAL_REGISTRY_IMG_PATH, name=timestamp)
+    pred_img_path = save_image(y_pred=y_pred, path=LOCAL_REGISTRY_IMG_PATH, name=timestamp)
 
     print("✅ Predicted images saved locally \n")
 
-    return y_pred
+    return y_pred, pred_img_path
 
 
 ### Make a prediction with Hugging Face model
-def predict_and_save_DPTForDepthEstimation(image_path, path=LOCAL_REGISTRY_IMG_PATH): # --> returns y_pred
+def predict_and_save_DPTForDepthEstimation(image_path, path=LOCAL_REGISTRY_IMG_PATH): # --> returns pred_img_path
 
     #image_url = "/Users/leslierolland/code/soapoperator/depth-planes-from-2d/raw_data/photo_test/urbansyn_rgb_rgb_0034.png"
     image = Image.open(image_path)
@@ -206,11 +216,11 @@ def predict_and_save_DPTForDepthEstimation(image_path, path=LOCAL_REGISTRY_IMG_P
 
     print("\n✅ Prediction done: ", formatted.shape, "\n")
 
-    return formatted
+    return formatted, pred_img_path
 
 
 if __name__ == '__main__':
-    #preprocess()
+    preprocess()
     X_train, X_test, y_train, y_test = load_processed_data()
     train(X_train=X_train, y_train=y_train)
     evaluate(X_test=X_test, y_test=y_test)
