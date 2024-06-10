@@ -53,6 +53,7 @@ def local_save_data(file_array: str, name:str, path: str):
 
     # Create and save the npy file
     file_path = f'{path}/{name}.npy'
+    #print(file_path)
     np.save(file_path, file_array)
 
     return file_path
@@ -317,7 +318,7 @@ def upload_directory_with_transfer_manager(source_directory, workers=8):
     # Finally, convert them all to strings.
     string_paths = [str(path) for path in relative_paths]
 
-    print("\nFound {} files.".format(len(string_paths)))
+    print("\nFound {} files to upload.".format(len(string_paths)))
 
     # Start the upload.
     results = transfer_manager.upload_many_from_filenames(

@@ -1,6 +1,7 @@
 import os
 import requests
 import mimetypes
+import cv2
 from params import *
 
 def download_image(image_url: str,
@@ -34,6 +35,10 @@ def download_image(image_url: str,
   else:
       print(f"Failed to download the image. Status code: {response.status_code}")
 
+
+def get_image_size(fname):
+    img = cv2.imread(fname)
+    return (img.shape[0], img.shape[1])
 
 if __name__ == '__main__':
   download_image('https://blog.apify.com/content/images/2023/12/logo-dark.svg', LOCAL_DATA_PATH, 'test')

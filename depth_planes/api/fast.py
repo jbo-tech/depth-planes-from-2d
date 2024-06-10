@@ -22,6 +22,14 @@ app.add_middleware(
     allow_headers=["*"],  # Allows all headers
 )
 
+### Check if the necessary folders exist
+cache_folder = os.path.join(LOCAL_DATA_PATH, "cache")
+cache_folder_preprocessed = os.path.join(LOCAL_DATA_PATH, "cache", "preprocessed")
+if not os.path.exists(cache_folder):
+    os.makedirs(cache_folder)
+if not os.path.exists(cache_folder_preprocessed):
+    os.makedirs(cache_folder_preprocessed)
+
 # $WIPE_BEGIN
 # 💡 Preload the model to accelerate the predictions
 # We want to avoid loading the heavy Deep Learning model from MLflow at each `get("/predict")`
@@ -42,16 +50,15 @@ async def depth(
     """
     # $CHA_BEGIN
 
-    cache_folder = os.path.join(LOCAL_DATA_PATH, "cache")
-    cache_folder_preprocessed = os.path.join(LOCAL_DATA_PATH, "cache", "preprocessed")
-    if not os.path.exists(cache_folder):
-        os.makedirs(cache_folder)
-    if not os.path.exists(cache_folder_preprocessed):
-        os.makedirs(cache_folder_preprocessed)
-
     filename = str(uuid.uuid4())
 
     image_cache_path, image_cache_extension = download_image(url, cache_folder, filename)
+    image_cache_size = get_image_size(image_cache_path)
+
+    #print(image_cache_path,image_cache_size,image_cache_extension)
+
+    if not image_cache_extension is in ['jpg','jpeg','png']:
+        raise ValueError("Please send an image.")
 
     if not os.path.exists(image_cache_path):
         return {"error": "Image not found on the server"}
@@ -81,21 +88,14 @@ async def depth(
 # http://127.0.0.1:8000/slice?url=https://placehold.co/600x400&nb_planes=10
 @app.get("/slices")
 async def slices(
-        url: str,  # https://placehold.co/600x400
-        nb_planes: Optional[int] = 5 # 1 or None
+        url: str,  # https://placehold.co/600x400get image size  file path
+        nb_planes: int | None = 5 # 1 or None
     ):
     """
     Return all the planes of an image.
     Assumes `url` is provided.
     """
     # $CHA_BEGIN
-
-    cache_folder = os.path.join(ROOT_DIRECTORY, "cache")
-    cache_folder_preprocessed = os.path.join(ROOT_DIRECTORY, "cache", "preprocessed")
-    if not os.path.exists(cache_folder):
-        os.makedirs(cache_folder)
-    if not os.path.exists(cache_folder_preprocessed):
-        os.makedirs(cache_folder_preprocessed)
 
     filename = str(uuid.uuid4())
 

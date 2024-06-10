@@ -12,9 +12,23 @@ import logging
 
 logging.basicConfig(filename="depth_planes.log",
                     format='%(asctime)s %(message)s',
-                    filemode='w')
+                    filemode='a')
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
+
+### Check if the save folders exist
+if not os.path.exists(LOCAL_REGISTRY_PATH):
+    os.makedirs(LOCAL_REGISTRY_PATH)
+if not os.path.exists(LOCAL_REGISTRY_MODEL_PATH):
+    os.makedirs(LOCAL_REGISTRY_MODEL_PATH)
+if not os.path.exists(LOCAL_REGISTRY_METRICS_PATH):
+    os.makedirs(LOCAL_REGISTRY_METRICS_PATH)
+if not os.path.exists(LOCAL_REGISTRY_PARAMS_PATH):
+    os.makedirs(LOCAL_REGISTRY_PARAMS_PATH)
+if not os.path.exists(LOCAL_REGISTRY_IMG_PATH):
+    os.makedirs(LOCAL_REGISTRY_IMG_PATH)
+if not os.path.exists(LOCAL_REGISTRY_CHECKPOINT_PATH):
+    os.makedirs(LOCAL_REGISTRY_CHECKPOINT_PATH)
 
 ### Load data and preprocess, save preprocessed data on bucket
 
@@ -24,7 +38,15 @@ def preprocess():
     - Process query data
     - Store processed data on new bucket
     """
+
+    logger.info(f'\n\n🚩 Preprocess : start!')
+
+    start = time.time()
+
     preprocess_dataset()
+
+    end = time.time()
+    logger.info(f'\n\n✅ Preprocess : ok! ({time.strftime("%H:%M:%S", time.gmtime(end - start))})\n############################################')
 
     print("✅ preprocess() done \n")
 
@@ -35,8 +57,6 @@ def load_processed_data(split_ratio: float = 0.2):
 
     path_X = f'{LOCAL_DATA_PATH}/ok/_preprocessed/X'
     path_y = f'{LOCAL_DATA_PATH}/ok/_preprocessed/y'
-
-    print(path_X)
 
     data_processed_X = get_npy(path_X) #array -> shape (nb, 128,256,3)
     data_processed_y = get_npy(path_y) #array -> shape (nb, 128, 256, 1)
@@ -53,12 +73,12 @@ def load_processed_data(split_ratio: float = 0.2):
 ### Train model
 def train(X_train,
           y_train,
-          learning_rate=0.01,
-          batch_size = 1,
-          patience = 30,
-          validation_split = 0.2,
-          latent_dimension = 120,
-          epochs = 3000):
+          learning_rate=LEARNING_RATE,
+          batch_size=BATCH_SIZE,
+          patience=PATIENCE,
+          validation_split=VALIDATION_SPLIT,
+          latent_dimension=LATENT_DIMENSION,
+          epochs=EPOCHS):
     """
     - Download processed data from buckets
     - Create train and test splits
@@ -71,9 +91,10 @@ def train(X_train,
     model = load_model()
 
     if model is None:
-        encoder = build_encoder(latent_dimension=latent_dimension)
-        decoder = build_decoder(latent_dimension=latent_dimension)
-        model = build_autoencoder(encoder, decoder)
+        #encoder = build_encoder(latent_dimension=latent_dimension)
+        #decoder = build_decoder(latent_dimension=latent_dimension)
+        #model = build_autoencoder(encoder, decoder)
+        model = build_model()
 
         logger.info(f'\n\nNew model:\n{model.summary()}\n############################################')
 
@@ -148,7 +169,8 @@ def predict(X_pred: np.ndarray = None ) -> np.ndarray:
     print("\n✅ Prediction done: ", y_pred.shape, "\n")
 
     # Save y_pred locally as an .png image
-    save_predicted_image(y_pred=y_pred)
+    timestamp = time.strftime("%Y%m%d-%H%M%S")
+    save_image(y_pred=y_pred, path=LOCAL_REGISTRY_IMG_PATH, name=timestamp)
 
     print("✅ Predicted images saved locally \n")
 
