@@ -216,7 +216,7 @@ def predict_and_save_DPTForDepthEstimation(image_path, path=LOCAL_REGISTRY_IMG_P
 
     print("\n✅ Prediction done: ", formatted.shape, "\n")
 
-    return depth, pred_img_path
+    return formatted, pred_img_path
 
 
 if __name__ == '__main__':

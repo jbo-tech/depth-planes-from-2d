@@ -65,7 +65,7 @@ async def depth(
     if not os.path.exists(image_cache_path):
         return {"error": "Image not found on the server"}
 
-    if API_MODEL == local:
+    if API_MODEL == 'local':
 
         model = app.state.model
         assert model is not None
@@ -79,9 +79,12 @@ async def depth(
         all_path_pred = save_image(y_pred, cache_folder_preprocessed, filename)
         pred_img_path = [x for x in all_path_pred if x.startswith(filename)][0]
 
-    elif API_MODEL == hf:
+    elif API_MODEL == 'hf':
 
         y_pred, pred_img_path = predict_and_save_DPTForDepthEstimation(image_cache_path, path=cache_folder_preprocessed)
+
+        print(type(y_pred),y_pred.shape)
+        print(pred_img_path)
 
     # ⚠️ fastapi only accepts simple Python data types as a return value
     # among them dict, list, str, int, float, bool
