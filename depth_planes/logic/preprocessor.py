@@ -1,6 +1,7 @@
 # Preprocessing
 from params import *
 from depth_planes.logic.data import *
+from depth_planes.logic.mask import *
 import os
 os.environ['CUDA_VISIBLE_DEVICES'] ="0"
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
@@ -184,28 +185,29 @@ def preprocess_one_image(path_original: str, path_destination: str, dataset_pref
 
 
 
-def preprocess_exr_to_array(path, log_scale_near=10, log_scale_far=1, log_scale_medium=5) -> np.ndarray:
+def preprocess_exr_to_array(path, log_scale=1000, coef=50000) -> np.ndarray:
     """
     l'image(y) est chargé depuis son path
     """
 
     img = cv2.imread(path, cv2.IMREAD_ANYCOLOR | cv2.IMREAD_ANYDEPTH)
 
+    img_normalized = img / np.max(img)
 
-    img_log_near = np.log1p(img * log_scale_near)
-    img_log_far = np.log1p(img * log_scale_far)
-    img_log_medium = np.log1p(img * log_scale_medium)
+    img_log = np.log1p(img_normalized * log_scale)
 
-    img_log_combined = img_log_near * 0.33 + img_log_far * 0.33 + img_log_medium * 0.33
-
-    img_log_combined_scaled = img_log_combined / np.max(img_log_combined) * 65535
-    img_log_combined_scaled[img_log_combined_scaled > 65535] = 65535
-    png_img = img_log_combined_scaled.astype('uint16')
+    img_log_combined_scaled = img_log / np.max(img_log) * coef
+    img_log_combined_scaled[img_log_combined_scaled > coef] = coef
+    png_img = img_log.astype('uint16')
 
     res = cv2.resize(png_img, dsize=((eval(IMAGE_SHAPE)[1]), (eval(IMAGE_SHAPE)[0])), interpolation=cv2.INTER_CUBIC)
-    res = np.expand_dims(res, axis=-1)
-    # print(res.shape)
-    return res
+
+    cat_img = create_mask_in_one(res, nb_mask= 5)
+
+    depth_map_resized = np.expand_dims(cat_img, axis=-1)
+
+    return depth_map_resized.astype('float32')
+
 
 
 def preprocess_img_to_array(path: str) -> np.ndarray:
@@ -225,7 +227,7 @@ def preprocess_img_to_array(path: str) -> np.ndarray:
 #     mat = scipy.io.loadmat(mat_path)
 #     return mat
 
-def preprocess_h5_to_array(path: str, log_scale_near=10, log_scale_far=1, log_scale_medium=5) -> np.ndarray:
+def preprocess_h5_to_array(path: str, log_scale=1000, coef=50000) -> np.ndarray:
     """
     _summary_
     """
@@ -236,12 +238,19 @@ def preprocess_h5_to_array(path: str, log_scale_near=10, log_scale_far=1, log_sc
     h5_rgb_res = tf.image.resize(h5_rgb_r, [(eval(IMAGE_SHAPE)[0]), (eval(IMAGE_SHAPE)[1])], preserve_aspect_ratio=False)
 
     h5_depth = h5['depth'][:]
-    img_log_near = np.log1p(h5_depth * log_scale_near)
-    img_log_far = np.log1p(h5_depth * log_scale_far)
-    img_log_medium = np.log1p(h5_depth * log_scale_medium)
-    img_log_combined = img_log_near * 0.33 + img_log_far * 0.33 + img_log_medium * 0.33
-    res = cv2.resize(img_log_combined, dsize=[(eval(IMAGE_SHAPE)[1]), (eval(IMAGE_SHAPE)[0])], interpolation=cv2.INTER_CUBIC)
-    h5_depth_res = np.expand_dims(res, axis=-1)
+    img_normalized = h5_depth / np.max(h5_depth)
+    img_log = np.log1p(img_normalized * log_scale)
+    img_log_combined_scaled = img_log / np.max(img_log) * coef
+    img_log_combined_scaled[img_log_combined_scaled > coef] = coef
+    png_img = img_log.astype('uint16')
+
+    res = cv2.resize(png_img, dsize=((eval(IMAGE_SHAPE)[1]), (eval(IMAGE_SHAPE)[0])), interpolation=cv2.INTER_CUBIC)
+    # print('**********************', res.shape)
+    cat_img = create_mask_in_one(res, nb_mask= 5)
+
+    h5_depth_res = np.expand_dims(cat_img, axis=-1)
+
+
 
     return h5_rgb_res, h5_depth_res
 
@@ -250,14 +259,12 @@ def preprocess_h5_to_array(path: str, log_scale_near=10, log_scale_far=1, log_sc
 
 
 
-
-
 if __name__ == '__main__':
 
-    preprocess_dataset()
+    # preprocess_dataset()
     # X, y = preprocess_bulk()
     # preprocess_one_image('/home/mathieu/code/MathieuAmacher/depth-planes-from-2d/raw_data/h5/nyudepthv2_train_study_0008_00001.h5', '/home/mathieu/code/MathieuAmacher/depth-planes-from-2d/raw_data/depth', 'test' )
     # preprocess_img_to_array('/home/mathieu/code/MathieuAmacher/depth-planes-from-2d/raw_data/rgb/rgb_0001.png')
     # preprocess_mat_to_array('/home/jbo/code/soapoperator/depth-planes-from-2d/raw_data/make3d/depth/make3d_train_depth_depth_sph_corr-060705-17.10.14-p-018t000.mat')
     # preprocess_exr_to_array('/home/mathieu/code/MathieuAmacher/depth-planes-from-2d/raw_data/depth/depth_0001.exr')
-    # preprocess_h5_to_array('/home/mathieu/code/MathieuAmacher/depth-planes-from-2d/raw_data/h5/nyudepthv2_train_study_0008_00001.h5')
+    preprocess_h5_to_array('/home/mathieu/code/MathieuAmacher/depth-planes-from-2d/raw_data/h5/nyudepthv2_train_study_0008_00001.h5')
