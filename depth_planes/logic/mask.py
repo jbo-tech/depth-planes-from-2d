@@ -31,7 +31,7 @@ def create_mask_in_one(y_pred, nb_mask: int =None) -> np.array:
     """
 
     slice_ = (np.max(y_pred)+1)/nb_mask
-    img_dim = np.squeeze(y_pred, axis=-1) #reduce the dim
+    img_dim = y_pred #reduce the dim
     mask = np.full((nb_mask,img_dim.shape[0],img_dim.shape[1]),-1)
 
     for i in np.arange(1, nb_mask+1):
