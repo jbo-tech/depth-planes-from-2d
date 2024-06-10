@@ -211,9 +211,9 @@ def download_chunks_concurrently(
     print("Downloaded {} to {}.".format(blob_name, filename))
 
 
-def upload_one_file(file_array: str, name:str, path: str):
+def upload_one_file(path_to_file: str, name: str, extension: str, path: str):
     """
-    Save np.array to a npy file in a bucket and a specific folder
+    Save a file in a bucket and a specific folder
     """
     prefix = path
 
@@ -221,15 +221,12 @@ def upload_one_file(file_array: str, name:str, path: str):
     client = storage.Client(project=GCP_PROJECT)
     bucket = client.bucket(BUCKET_NAME)
 
-    # Convert the file_array to bytes
-    file_bytes = file_array.encode('utf-8')
-
     # Create a unique blob name
-    blob_name = f"{prefix}/{name}.npy"
+    blob_name = f"{prefix}/{name}.{extension}"
 
     # Upload the file to the bucket
     blob = bucket.blob(blob_name)
-    blob.upload_from_string(file_bytes, content_type='application/octet-stream')
+    blob.upload_from_filename(path_to_file)
 
     return blob_name
 
