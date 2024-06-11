@@ -100,8 +100,8 @@ def gcp_list_files(prefix=None,extension=None):
     Summary
     """
     #
-    client = storage.Client(project=GCP_PROJECT_OLD)
-    bucket = client.bucket(BUCKET_NAME_OLD)
+    client = storage.Client(project=GCP_PROJECT)
+    bucket = client.bucket(BUCKET_NAME)
 
     #
     blobs = bucket.list_blobs(prefix=prefix)
@@ -112,7 +112,7 @@ def gcp_list_files(prefix=None,extension=None):
     else:
         files = [blob.name for blob in blobs]
 
-    #print(files)
+    print(files)
     return files
 
 
@@ -369,14 +369,44 @@ def get_blob_url(blob_prefix: str) -> str:
     #print("Generated GET signed URL:" + url)
     return url
 
+def convert_bloob_name_list(bloob_list, path)-> list:
+    """
+    Function to convert a blood name list into a path directory
+
+    Input:
+        bloob name list
+    Output:
+        path list to take files download from a bucket
+    """
+    path_list = []
+
+    for elt in bloob_list:
+        end_ = str.split(elt, "/")[-1]
+        path_list.append(os.path.join(path, end_))
+
+    return path_list
+
+def test_nb_mask():
+    path = os.path.join(LOCAL_DATA_PATH, "ok", "_preprocessed", "y")
+
+    file_list = ["urbansyn_depth_1026_pre.npy",
+                 "urbansyn_depth_4777_pre.npy",
+                 "urbansyn_depth_0892_pre.npy",
+                 "urbansyn_depth_0014_pre.npy"]
+
+    for f in file_list:
+        path_file = os.path.join(path, f)
+        npy = np.load(path_file)
+        print(f"File: {f}   max= {np.max(npy)}")
 
 if __name__ == '__main__':
     #get_blob_url('urbansyn/rgb/rgb_7539.png')
-    #gcp_list_files(prefix='nyudepthv2/h5',extension=None)
+    gcp_list_files(prefix='_preprocessed/X',extension=None) #urbansyn/depth
     #download_chunks_concurrently('urbansyn/depth/depth_0001.exr', 'depth_0001.exr', chunk_size=64 * 1024 * 1024, workers=8)
     #download_many_blobs_with_transfer_manager(['make3d/test/depth/depth_sph_corr-op36-p-282t000.mat', 'make3d/test/depth/depth_sph_corr-op36-p-313t000.mat'], destination_directory="", workers=8)
     #upload_many_blobs_with_transfer_manager(['00019_00183_indoors_000_010_depth.npy','00019_00183_indoors_000_010_depth_mask.npy'], source_directory="/home/jbo/code/soapoperator/depth-planes-from-2d/raw_data/val/indoors/scene_00019/scan_00183", workers=8)
     #upload_directory_with_transfer_manager(source_directory="/home/jbo/code/soapoperator/depth-planes-from-2d/raw_data/tmp", workers=8)
     #clean_data('/home/jbo/code/soapoperator/depth-planes-from-2d/raw_data/tmp/')
     #local_list_files('/home/jbo/code/soapoperator/depth-planes-from-2d/raw_data/tmp')
-    get_npy(f'{LOCAL_DATA_PATH}/ok/_preprocessed/X')
+    #get_npy(f'{LOCAL_DATA_PATH}/ok/_preprocessed/X')
+    #test_nb_mask()
