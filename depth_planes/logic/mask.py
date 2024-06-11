@@ -41,6 +41,9 @@ def create_mask_in_one(y_pred, nb_mask: int =None) -> np.array:
 
     return mask
 
+def create_mask_matricial(y_pred):
+    return np.round(y_pred/10000)
+
 def apply_mask(x, mask:np.array) -> np.array:
     """
     Function to apply mask on the reel image X
