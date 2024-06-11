@@ -170,3 +170,4 @@ notebooks/*/
 saved_files/
 notebooks/*.md
 notebooks/*.sh
+.env.yaml
