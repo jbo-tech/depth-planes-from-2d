@@ -1,4 +1,6 @@
 import numpy as np
+from params import *
+from depth_planes.logic.preprocessor import *
 
 
 def number_mask(y_pred) -> int:
@@ -41,21 +43,32 @@ def create_mask_in_one(y_pred, nb_mask: int =None) -> np.array:
 
     return mask
 
-def apply_mask(x, mask:np.array) -> np.array:
-    """
-    Function to apply mask on the reel image X
-    Save the diffrent mask image on a folder
+def all_mask_one_image(x_path: str, y_path: str):
 
-    Return:
-    np.array with the following shape (nb_mask, image_size(heigth, width, color))
-    """
+    x = preprocess_img_to_array(x_path)
+    x = np.dstack((x, np.ones((eval(IMAGE_SHAPE)[0], eval(IMAGE_SHAPE)[1]), 255)))
 
-    pass
+    y = np.squeeze(np.load(y_path), axis=2)
+    mask_array = np.array([])
 
-def save_mask(mask):
-    """
-    Function to save the global mask array containning all the masks
-    in a temp folder
-    """
+    for i in np.unique(y):
+        mask = (y == i).astype(int)
+        mask_x = x * np.expand_dims(mask, axis=-1)
+        mask_array = np.append(mask_array, mask_x)
 
-    pass
+    mask_array = np.reshape(mask_array, (len(np.unique(y)), (eval(IMAGE_SHAPE)[0]), (eval(IMAGE_SHAPE)[1]), 4))
+
+    mask_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(x_path)))), 'mask')
+    os.makedirs(mask_dir, exist_ok=True)
+
+    base_name = os.path.basename(x_path).split('.')[0] + '_mask'
+    file_path = os.path.join(mask_dir, base_name)
+
+    np.save(file_path, mask_array)
+
+    return file_path
+
+
+
+if __name__ == '__main__':
+    all_mask_one_image('/home/mathieu/code/MathieuAmacher/depth-planes-from-2d/raw_data/urban/X100/rgb_0001.png', '/home/mathieu/code/MathieuAmacher/depth-planes-from-2d/raw_data/urban/y100_prec/dataset_depth_0001_pre.npy')
