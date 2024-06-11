@@ -139,7 +139,9 @@ def preprocess_bulk(files: list, path_preprocessed: str, dataset_prefix: str):
         download_many_blobs_with_transfer_manager(chunk_to_download, destination_directory=tmp_folder, workers=8)
 
         # Preprocess local file
-        files_in_tmp = local_list_files(tmp_folder)
+        # files_in_tmp = local_list_files(tmp_folder) # DO NOT TAKE
+        files_in_tmp = convert_bloob_name_list(chunk_to_download, preprocessed_path_check)
+
         #print(files_in_tmp)
         for f in files_in_tmp:
             print(f'Preprocessing : {f}')
@@ -186,16 +188,33 @@ def preprocess_one_image(path_original: str, path_destination: str, dataset_pref
         pre = preprocess_img_to_array(path_original)
         return local_save_data(pre, path=path_destination, name=name)
 
+def image_chunck_to_array(path_list) -> np.ndarray:
+    """
+    Transform all images of the chunck in one array.
+    This is to perform matricial calculus on the preprocess
 
+    Input:
+        path_list of all path file from a download directory corresponding
+            at all image of the CHUNCK
+    Output:
+        np.array with shape (CHUNK_SIZE, (IMAGE_SHAPE))
+    """
 
-def preprocess_exr_to_array(path, log_scale=1000, coef=50000) -> np.ndarray:
+    chunk_arr = np.array()
+
+    for path in path_list:
+        img = cv2.imread(path, cv2.IMREAD_ANYCOLOR | cv2.IMREAD_ANYDEPTH)
+        res = cv2.resize(img, dsize=((eval(IMAGE_SHAPE)[1]), (eval(IMAGE_SHAPE)[0])), interpolation=cv2.INTER_CUBIC)
+        np.append(chunk_arr, res)
+
+    return chunk_arr
+
+def preprocess_exr_to_array(chunck_arr, log_scale=1000, coef=50000) -> np.ndarray:
     """
     l'image(y) est chargé depuis son path
     """
 
-    img = cv2.imread(path, cv2.IMREAD_ANYCOLOR | cv2.IMREAD_ANYDEPTH)
-
-    img_normalized = img / np.max(img)
+    img_normalized = chunck_arr / np.max(chunck_arr)
 
     img_log = np.log1p(img_normalized * log_scale)
 
@@ -203,9 +222,7 @@ def preprocess_exr_to_array(path, log_scale=1000, coef=50000) -> np.ndarray:
     img_log_combined_scaled[img_log_combined_scaled > coef] = coef
     png_img = img_log.astype('uint16')
 
-    res = cv2.resize(png_img, dsize=((eval(IMAGE_SHAPE)[1]), (eval(IMAGE_SHAPE)[0])), interpolation=cv2.INTER_CUBIC)
-
-    cat_img = create_mask_in_one(res, nb_mask= 5)
+    cat_img = create_mask_matricial(res)
 
     depth_map_resized = np.expand_dims(cat_img, axis=-1)
 
