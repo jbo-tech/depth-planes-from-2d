@@ -170,3 +170,6 @@ notebooks/*/
 saved_files/
 notebooks/*.md
 notebooks/*.sh
+
+# credential directory for API Keys
+credentials/
