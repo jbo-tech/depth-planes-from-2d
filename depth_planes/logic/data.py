@@ -233,7 +233,6 @@ def upload_one_file(file_array: str, name:str, path: str):
 
     return blob_name
 
-
 def upload_many_blobs_with_transfer_manager(
     filenames, source_directory="", workers=8):
     """Upload every file in a list to a bucket, concurrently in a process pool.
