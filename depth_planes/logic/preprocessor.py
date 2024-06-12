@@ -200,12 +200,14 @@ def image_chunck_to_array(path_list) -> np.ndarray:
         np.array with shape (CHUNK_SIZE, (IMAGE_SHAPE))
     """
 
-    chunk_arr = np.array()
+    chunk_arr = np.array(1, IMAGE_SHAPE[0], IMAGE_SHAPE[1])
 
     for path in path_list:
         img = cv2.imread(path, cv2.IMREAD_ANYCOLOR | cv2.IMREAD_ANYDEPTH)
         res = cv2.resize(img, dsize=((eval(IMAGE_SHAPE)[1]), (eval(IMAGE_SHAPE)[0])), interpolation=cv2.INTER_CUBIC)
-        np.append(chunk_arr, res)
+        chunk_arr = np.concatenate((chunk_arr, res), axis=0)
+
+    chunk_arr = chunk_arr[1:]
 
     return chunk_arr
 
