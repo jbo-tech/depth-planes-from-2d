@@ -14,7 +14,6 @@ from tensorflow import io, image
 from tensorflow.keras.preprocessing.image import img_to_array, load_img
 os.environ["OPENCV_IO_ENABLE_OPENEXR"] = "1"
 import cv2
-import scipy.io
 import h5py
 
 import logging
