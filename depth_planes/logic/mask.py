@@ -43,30 +43,36 @@ def create_mask_in_one(y_pred, nb_mask: int =None) -> np.array:
 
     return mask
 
-def all_mask_one_image(x_path: str, y_path: str):
+def create_mask_from_image(x_path :str, y_path: str, y_prec_path):
 
-    x = preprocess_img_to_array(x_path)
-    x = np.dstack((x, np.ones((eval(IMAGE_SHAPE)[0], eval(IMAGE_SHAPE)[1]), 255)))
+    x_array = img_to_array(load_img(x_path))
+    x_reshape = np.reshape(x_array, (x_array.shape[0]*x_array.shape[1], 3))
 
-    y = np.squeeze(np.load(y_path), axis=2)
+    y_array = cv2.imread(y_path,  cv2.IMREAD_ANYCOLOR | cv2.IMREAD_ANYDEPTH)
+    y_reshape = np.reshape(y_array, (y_array.shape[0]*y_array.shape[1]))
+
+    y_mask_image = np.load(y_prec_path)
+    y_mask_enlarge = cv2.resize(y_mask_image, dsize=(y_array.shape[1], y_array.shape[0]), interpolation=cv2.INTER_NEAREST)
+    y_mask_reshape = np.reshape(y_mask_enlarge, (y_mask_enlarge.shape[0]*y_mask_enlarge.shape[1], 1))
+
+
     mask_array = np.array([])
 
-    for i in np.unique(y):
-        mask = (y == i).astype(int)
-        mask_x = x * np.expand_dims(mask, axis=-1)
+    for i in np.unique(y_mask_reshape):
+        mask = (y_mask_reshape == i).astype(int)
+        mask_x = x_reshape * mask
         mask_array = np.append(mask_array, mask_x)
 
-    mask_array = np.reshape(mask_array, (len(np.unique(y)), (eval(IMAGE_SHAPE)[0]), (eval(IMAGE_SHAPE)[1]), 4))
+    mask_array = np.reshape(mask_array, (int(mask_array.shape[0]/3), 3))
 
-    mask_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(x_path)))), 'mask')
-    os.makedirs(mask_dir, exist_ok=True)
+    mask_array = mask_array/255
 
-    base_name = os.path.basename(x_path).split('.')[0] + '_mask'
-    file_path = os.path.join(mask_dir, base_name)
+    mask_a = np.expand_dims((mask_array.sum(axis=1) > 0).astype('float64'), axis=-1)
+    mask_b = np.concatenate([mask_array,mask_a], axis=1)
 
-    np.save(file_path, mask_array)
+    rgba_array = np.reshape(np.asarray(mask_b), (len(np.unique(y_mask_image)), y_array.shape[0], y_array.shape[1], 4))
 
-    return file_path
+    return rgba_array
 
 
 
