@@ -6,12 +6,17 @@ from depth_planes.utils import *
 from depth_planes.logic.registry import *
 from depth_planes.logic.preprocessor import *
 from depth_planes.logic.model import *
+from depth_planes.logic.predict import *
 ## Fast
-from fastapi import FastAPI
+from fastapi import FastAPI, UploadFile, File
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse, StreamingResponse
 ## Other
 import uuid
 import json
+import cv2
+from PIL import Image
+import io
 
 app = FastAPI()
 
@@ -40,6 +45,43 @@ if not os.path.exists(cache_folder_preprocessed):
 # This will prove very useful for the Demo Day
 # app.state.model = load_model()
 # $WIPE_END
+
+@app.post("/depthmap")
+async def depthmap(
+        file: UploadFile=File(...)  # https://placehold.co/600x400
+    ):
+    """
+    Return a depth map of an image.
+    Assumes `url` is provided.
+    """
+    # $CHA_BEGIN
+
+    filename = str(uuid.uuid4())
+    file = await file.read()
+    # # file_ = np.fromstring(file_,np.uint8)
+    # # file_ = cv2.imdecode(file_,cv2.IMREAD_COLOR)
+
+    image = Image.open(io.BytesIO(file))
+    png_format = io.BytesIO()
+    image.save(png_format, format='PNG')
+    png_format.seek(0)
+
+    predict_DPTForDepthEstimation(image)
+
+    # img_byte_arr = io.BytesIO()
+    # depth_pred.save(img_byte_arr, format='PNG')
+    # img_byte_arr.seek(0)
+    # img_byte_arr = img_byte_arr.getvalue()
+    # print(type(img_byte_arr))
+    # print(type(img_byte_arr))
+    # print(img_byte_arr)
+    # ⚠️ fastaimg_byte_arrpi only accepts simple Python data types as a return value
+    # among them dict, list, str, int, float, bool
+    # in order to be able to convert the api response to JSON
+
+    return FileResponse("here.png")
+    # $CHA_END
+
 
 # http://127.0.0.1:8000/depth?url=https://placehold.co/600x400
 @app.get("/depth")

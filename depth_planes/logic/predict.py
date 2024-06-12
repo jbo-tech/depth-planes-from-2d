@@ -12,6 +12,9 @@ from params import *
 
 def predict_DPTForDepthEstimation(image): # --> returns pred_img
 
+    # image = np.fromstring(image,np.uint8)
+    # image = cv2.imdecode(image,cv2.IMREAD_COLOR)
+
     processor = DPTImageProcessor.from_pretrained("Intel/dpt-large")
     model = DPTForDepthEstimation.from_pretrained("Intel/dpt-large")
 
@@ -34,7 +37,5 @@ def predict_DPTForDepthEstimation(image): # --> returns pred_img
     output = prediction.squeeze().cpu().numpy()
     formatted = (output * 255 / np.max(output)).astype("uint8")
     depth = Image.fromarray(formatted)
-
+    depth.save("here.png")
     print("\n✅ Prediction done: ", formatted.shape, "\n")
-
-    return depth
