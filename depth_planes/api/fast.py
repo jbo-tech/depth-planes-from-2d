@@ -38,7 +38,7 @@ if not os.path.exists(cache_folder_preprocessed):
 # The trick is to load the model in memory when the Uvicorn server starts
 # and then store the model in an `app.state.model` global variable, accessible across all routes!
 # This will prove very useful for the Demo Day
-app.state.model = load_model()
+# app.state.model = load_model()
 # $WIPE_END
 
 # http://127.0.0.1:8000/depth?url=https://placehold.co/600x400

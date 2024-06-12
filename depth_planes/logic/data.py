@@ -5,7 +5,6 @@ import numpy as np
 import datetime
 from google.cloud import storage
 import shutil
-from pathlib import Path
 
 
 def clean_data(path: str):

@@ -28,10 +28,10 @@ def download_image(image_url: str,
 
       with open(local_path, "wb") as fp:
           fp.write(response.content)
+      print(f"Image downloaded successfully at {file_dir}.")
 
       return local_path, extension
 
-      print(f"Image downloaded successfully at {file_dir}.")
   else:
       print(f"Failed to download the image. Status code: {response.status_code}")
 

@@ -1,5 +1,5 @@
 import numpy as np
-from keras import models, layers, optimizers, losses, metrics, Sequential, Model, callbacks
+from keras import models, layers, optimizers, Sequential, Model, callbacks
 from params import *
 
 def build_encoder(latent_dimension):
