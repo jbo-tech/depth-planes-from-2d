@@ -16,6 +16,8 @@ os.environ["OPENCV_IO_ENABLE_OPENEXR"] = "1"
 import cv2
 import scipy.io
 import h5py
+from colorama import Fore, Style #for color in terminal
+import time
 
 import logging
 
@@ -42,13 +44,21 @@ if not os.path.exists(preprocessed_folder_y):
 def preprocess_dataset():
 
     if eval(DATA_URBANSYN) == True:
-        X_path="urbansyn/rgb"
-        y_path="urbansyn/depth"
+        if IMAGE_ENV == "gcp":
+            # X_path="urbansyn/rgb"
+            y_path="urbansyn/depth"
 
-        X_file_list = gcp_list_files(X_path)
-        y_file_list = gcp_list_files(y_path)
+            # X_file_list = gcp_list_files(X_path)
+            y_file_list = gcp_list_files(y_path)
 
-        preprocess_bulk( X_file_list,str(preprocessed_folder_X),'urbansyn')
+        elif IMAGE_ENV == "local":
+            # X_path = os.path.join(LOCAL_DATA_PATH,"tmp", "urbansyn", "rgb")
+            y_path = os.path.join(LOCAL_DATA_PATH,"tmp", "urbansyn", "depth")
+
+            # X_file_list = local_list_files(X_path)
+            y_file_list = local_list_files(y_path)
+
+        # preprocess_bulk( X_file_list,str(preprocessed_folder_X),'urbansyn')
         preprocess_bulk( y_file_list,str(preprocessed_folder_y),'urbansyn')
 
     if eval(DATA_MAKE3D) == True:
@@ -99,7 +109,7 @@ def preprocess_dataset():
         preprocess_bulk( nyudepthv2_file_list, str(preprocessed_folder),'nyudepthv2')
 
     # Upload tmp files
-    upload_directory_with_transfer_manager(source_directory=str(os.path.dirname(preprocessed_folder)), workers=8)
+    upload_directory_with_transfer_manager(source_directory=str(os.path.dirname(preprocessed_folder_y)), workers=8)
 
 def preprocess_bulk(files: list, path_preprocessed: str, dataset_prefix: str):
     """
@@ -115,7 +125,9 @@ def preprocess_bulk(files: list, path_preprocessed: str, dataset_prefix: str):
     """
 
     nb_files_to_download = len(files)
+    #For the situation of nyudepthv2 folder without X or y folder
     preprocessed_path_check = path_preprocessed if path_preprocessed.endswith(('/X','/y')) else str(preprocessed_folder_X)
+    #Check the number of file in preprocessed folder for restart situation
     nb_files_preprocessed = len([x for x in local_list_files(preprocessed_path_check) if x.startswith(dataset_prefix)])
     files = files if nb_files_preprocessed == 0 else files[nb_files_preprocessed + 1:]
 
@@ -124,37 +136,44 @@ def preprocess_bulk(files: list, path_preprocessed: str, dataset_prefix: str):
     bucket_size = round(len(files) / PREPROCESS_CHUNK_SIZE)
     #bucket_size = 2
 
-    print(f'Files to download : {len(files)} in {bucket_size} buckets.')
-    logger.info(f'\n\nFiles to download : {len(files)} in {bucket_size} buckets.\n############################################')
+    print(Fore.BLUE + f'Files to download : {len(files)} in {bucket_size} buckets.' + Style.RESET_ALL)
+    logger.info(f'\n\nFiles to download : {len(files)} in {bucket_size} buckets.\n\
+                ############################################')
 
     for i in range(bucket_size):
 
         if not os.path.exists(tmp_folder):
             os.makedirs(tmp_folder)
 
-        print(f'Preprocessing chunk: {i}/{bucket_size} ({round(i/bucket_size*100,2)}%)')
+        print(Fore.GREEN + f'Preprocessing chunk: {i}/{bucket_size} ({round(i/bucket_size*100)}%)' + Style.RESET_ALL)
 
         # Donwload a chunk
         chunk_start = i * PREPROCESS_CHUNK_SIZE if i > 0 else 1 # Remove the folder from the list
         chunk_end = i * PREPROCESS_CHUNK_SIZE + PREPROCESS_CHUNK_SIZE if i < bucket_size else len(files)
         chunk_to_download = files[chunk_start:chunk_end]
-        download_many_blobs_with_transfer_manager(chunk_to_download, destination_directory=tmp_folder, workers=8)
+
+        if IMAGE_ENV == "gcp":
+            download_many_blobs_with_transfer_manager(chunk_to_download, destination_directory=tmp_folder, workers=8)
+            # Get list of local path of the chunck
+            files_in_tmp = convert_bloob_name_list(chunk_to_download, tmp_folder)
+        elif IMAGE_ENV == "local":
+            files_in_tmp = chunk_to_download
 
         # Preprocess local file
-        # Get list of local path of the chunck
-        files_in_tmp = convert_bloob_name_list(files_in_tmp, chunk_to_download, preprocessed_path_check)
-
         try:
             extension = files_in_tmp[0].split('.')[-1]
             if extension == "exr" or extension == "other":
                 chunck_arr = image_chunck_to_array(files_in_tmp)
-                preprocess_all_image(chunck_arr, path_preprocessed, dataset_prefix)
+                preprocess_all_image(files_in_tmp, chunck_arr, path_preprocessed, dataset_prefix)
             else:
                 for f in files_in_tmp:
                     print(f'Preprocessing : {f}')
-                    preprocess_one_image(f,path_preprocessed,dataset_prefix)
+                    preprocess_one_image(f, path_preprocessed, dataset_prefix)
         except (RuntimeError, TypeError, NameError):
-            logging.error(f"Unexpected {NameError}, {TypeError} ({RuntimeError})\n{f}")
+            try:
+                logging.error(f"Unexpected {NameError}, {TypeError} ({RuntimeError})\n{f}")
+            except:
+                logging.error(f"Unexpected {NameError}, {TypeError} ({RuntimeError})\n")
 
         # Clean the tmp folder
         # clean_data(tmp_folder)
@@ -196,7 +215,9 @@ def preprocess_one_image(path_original: str, path_destination: str,
 def preprocess_all_image(list_path: list, chunck_arr: np.ndarray,
                          path_destination: str, dataset_prefix: str) -> np.ndarray:
     """
-    Function
+    Function to preprocess all image concanate in a big ndarray
+    Input:
+        list_path = list of all path to have the name of image corresponding
     """
 
     if not os.path.exists(path_destination):
@@ -205,7 +226,10 @@ def preprocess_all_image(list_path: list, chunck_arr: np.ndarray,
     path_ext = list_path[0].split('.')[-1]
 
     if path_ext == 'exr':
+        logger.info(f'Start preprocess: {time.time()}')
         pre = preprocess_exr_to_array(chunck_arr)
+        logger.info(f'End preprocess: {time.time()}')
+
         #Extraction each image from mega array
         for i in range(0, pre.shape[0]):
             img_tmp = pre[i]
@@ -213,6 +237,7 @@ def preprocess_all_image(list_path: list, chunck_arr: np.ndarray,
             img_tmp = img_tmp.astype('float32')
             name = dataset_prefix + "_" + os.path.splitext(list_path[i])[0].split('/')[-1] +'_pre'
             local_save_data(img_tmp, path=path_destination, name=name)
+            print(f'Image saved: {name}')
         return
     else:
         #TO DO : other extension
@@ -230,11 +255,12 @@ def image_chunck_to_array(path_list) -> np.ndarray:
         np.array with shape (CHUNK_SIZE, (IMAGE_SHAPE))
     """
 
-    chunk_arr = np.array(1, IMAGE_SHAPE[0], IMAGE_SHAPE[1])
+    chunk_arr = np.zeros((1, eval(IMAGE_SHAPE)[0], eval(IMAGE_SHAPE)[1]))
 
     for path in path_list:
         img = cv2.imread(path, cv2.IMREAD_ANYCOLOR | cv2.IMREAD_ANYDEPTH)
         res = cv2.resize(img, dsize=((eval(IMAGE_SHAPE)[1]), (eval(IMAGE_SHAPE)[0])), interpolation=cv2.INTER_CUBIC)
+        res = np.expand_dims(res, axis=0)
         chunk_arr = np.concatenate((chunk_arr, res), axis=0)
 
     chunk_arr = chunk_arr[1:]
