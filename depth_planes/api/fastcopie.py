@@ -39,9 +39,9 @@ async def depth(
     X_processed = np.expand_dims(get_npy_direct(X_processed_path),axis=0)
     #prev with the transformer
     y_pred, pred_img_path = predict_and_save_DPTForDepthEstimation(cv2_img, path=cache_folder_preprocessed)
-    return dict(
-        y_pred.tolist() # The array of the depth map
-        )
+    return {
+        "pred":y_pred.tolist() # The array of the depth map
+    }
 
 
 @app.get("/")
