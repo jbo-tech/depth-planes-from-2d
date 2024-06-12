@@ -59,7 +59,7 @@ def get_npy_direct(path_direct: str) -> np.array:
     return npy
 
 
-def local_save_data(file_array: str, name:str, path: str):
+def local_save_data(file_array: np.ndarray, name:str, path: str):
     """
     Save np.array to a npy file in a bucket and a specific folder
     """
@@ -375,7 +375,7 @@ def convert_bloob_name_list(bloob_list, path)-> list:
     Input:
         bloob name list
     Output:
-        path list to take files download from a bucket
+        local file path list download from a bucket
     """
     path_list = []
 
