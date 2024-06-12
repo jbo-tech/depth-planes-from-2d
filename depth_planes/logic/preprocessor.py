@@ -132,6 +132,8 @@ def preprocess_bulk(files: list, path_preprocessed: str, dataset_prefix: str):
         if not os.path.exists(tmp_folder):
             os.makedirs(tmp_folder)
 
+        print(f'Preprocessing chunk: {i}/{bucket_size} ({round(i/bucket_size*100,2)}%)')
+
         # Donwload a chunk
         chunk_start = i * PREPROCESS_CHUNK_SIZE if i > 0 else 1 # Remove the folder from the list
         chunk_end = i * PREPROCESS_CHUNK_SIZE + PREPROCESS_CHUNK_SIZE if i < bucket_size else len(files)
@@ -139,16 +141,20 @@ def preprocess_bulk(files: list, path_preprocessed: str, dataset_prefix: str):
         download_many_blobs_with_transfer_manager(chunk_to_download, destination_directory=tmp_folder, workers=8)
 
         # Preprocess local file
-        # files_in_tmp = local_list_files(tmp_folder) # DO NOT TAKE
-        files_in_tmp = convert_bloob_name_list(chunk_to_download, preprocessed_path_check)
+        # Get list of local path of the chunck
+        files_in_tmp = convert_bloob_name_list(files_in_tmp, chunk_to_download, preprocessed_path_check)
 
-        #print(files_in_tmp)
-        for f in files_in_tmp:
-            print(f'Preprocessing : {f}')
-            try:
-                preprocess_one_image(f,path_preprocessed,dataset_prefix)
-            except (RuntimeError, TypeError, NameError):
-                logging.error(f"Unexpected {NameError}, {TypeError} ({RuntimeError})\n{f}")
+        try:
+            extension = files_in_tmp[0].split('.')[-1]
+            if extension == "exr" or extension == "other":
+                chunck_arr = image_chunck_to_array(files_in_tmp)
+                preprocess_all_image(chunck_arr, path_preprocessed, dataset_prefix)
+            else:
+                for f in files_in_tmp:
+                    print(f'Preprocessing : {f}')
+                    preprocess_one_image(f,path_preprocessed,dataset_prefix)
+        except (RuntimeError, TypeError, NameError):
+            logging.error(f"Unexpected {NameError}, {TypeError} ({RuntimeError})\n{f}")
 
         # Clean the tmp folder
         # clean_data(tmp_folder)
@@ -156,7 +162,8 @@ def preprocess_bulk(files: list, path_preprocessed: str, dataset_prefix: str):
     return "Preprocess local: Ok"
 
 
-def preprocess_one_image(path_original: str, path_destination: str, dataset_prefix: str) -> np.ndarray:
+def preprocess_one_image(path_original: str, path_destination: str,
+                         dataset_prefix: str) -> np.ndarray:
     """
     _summary_
 
@@ -173,20 +180,43 @@ def preprocess_one_image(path_original: str, path_destination: str, dataset_pref
     path_ext = path_original.split('.')[-1]
     name = dataset_prefix + "_" + os.path.splitext(path_original)[0].split('/')[-1] +'_pre'
 
-    if path_ext == 'exr':
-        pre = preprocess_exr_to_array(path_original) # Return np.array
-        return local_save_data(pre, path=path_destination, name=name)
-    elif path_ext == 'h5':
-        rgb_res, depth_res = preprocess_h5_to_array(path_original)
-        rgb_path = local_save_data(rgb_res, name=name+'_rgb', path=str(preprocessed_folder_X))
-        depth_path = local_save_data(depth_res, name=name+'_depth', path=str(preprocessed_folder_y))
-        return rgb_path, depth_path
+    if path_ext == 'h5':
+        for i in range(0, pre.shape[0]):
+            rgb_res, depth_res = preprocess_h5_to_array(path_original)
+            rgb_path = local_save_data(rgb_res, name=name+'_rgb', path=str(preprocessed_folder_X))
+            depth_path = local_save_data(depth_res, name=name+'_depth', path=str(preprocessed_folder_y))
+            return rgb_path, depth_path
     elif path_ext == 'npy':
         pre = preprocess_npy_to_array(path_original)
         return local_save_data(pre, path=path_destination, name=name)
     else:
         pre = preprocess_img_to_array(path_original)
         return local_save_data(pre, path=path_destination, name=name)
+
+def preprocess_all_image(list_path: list, chunck_arr: np.ndarray,
+                         path_destination: str, dataset_prefix: str) -> np.ndarray:
+    """
+    Function
+    """
+
+    if not os.path.exists(path_destination):
+        os.makedirs(path_destination)
+
+    path_ext = list_path[0].split('.')[-1]
+
+    if path_ext == 'exr':
+        pre = preprocess_exr_to_array(chunck_arr)
+        #Extraction each image from mega array
+        for i in range(0, pre.shape[0]):
+            img_tmp = pre[i]
+            img_tmp = np.expand_dims(img_tmp, axis=-1)
+            img_tmp = img_tmp.astype('float32')
+            name = dataset_prefix + "_" + os.path.splitext(list_path[i])[0].split('/')[-1] +'_pre'
+            local_save_data(img_tmp, path=path_destination, name=name)
+        return
+    else:
+        #TO DO : other extension
+        pass
 
 def image_chunck_to_array(path_list) -> np.ndarray:
     """
@@ -215,22 +245,19 @@ def preprocess_exr_to_array(chunck_arr, log_scale=1000, coef=50000) -> np.ndarra
     """
     l'image(y) est chargé depuis son path
     """
-
+    #Normalization
     img_normalized = chunck_arr / np.max(chunck_arr)
 
+    #Augmentation
     img_log = np.log1p(img_normalized * log_scale)
-
     img_log_combined_scaled = img_log / np.max(img_log) * coef
     img_log_combined_scaled[img_log_combined_scaled > coef] = coef
-    png_img = img_log.astype('uint16')
+    png_img = img_log_combined_scaled.astype('uint16')
 
-    cat_img = create_mask_matricial(res)
+    #Create mask
+    cat_img = np.round(png_img/10000)
 
-    depth_map_resized = np.expand_dims(cat_img, axis=-1)
-
-    return depth_map_resized.astype('float32')
-
-
+    return cat_img
 
 def preprocess_img_to_array(path: str) -> np.ndarray:
     """
