@@ -7,6 +7,7 @@ from depth_planes.logic.registry import *
 from depth_planes.logic.preprocessor import *
 from depth_planes.logic.model import *
 from depth_planes.logic.predict import *
+from depth_planes.logic.mask import *
 ## Fast
 from fastapi import FastAPI, UploadFile, File
 from fastapi.middleware.cors import CORSMiddleware
@@ -17,6 +18,8 @@ import json
 import cv2
 from PIL import Image
 import io
+from tensorflow.keras.preprocessing.image import img_to_array, load_img
+
 
 app = FastAPI()
 
@@ -82,11 +85,11 @@ async def depthmap(
     return FileResponse("here.png")
     # $CHA_END
 
-
-# http://127.0.0.1:8000/depth?url=https://placehold.co/600x400
-@app.get("/depth")
-async def depth(
-        url: str,  # https://placehold.co/600x400
+# http://127.0.0.1:8000/slice?url=https://placehold.co/600x400&nb_planes=10
+@app.post("/slices")
+async def depthmap(
+        file: UploadFile=File(...),
+        depth: UploadFile=File(...)
     ):
     """
     Return a depth map of an image.
@@ -95,174 +98,27 @@ async def depth(
     # $CHA_BEGIN
 
     filename = str(uuid.uuid4())
+    file = await file.read()
+    depth = await depth.read()
 
-    image_cache_path, image_cache_extension = download_image(url, cache_folder, filename)
-    image_cache_size = get_image_size(image_cache_path)
+    image = Image.open(io.BytesIO(file))
+    png_format = io.BytesIO()
+    image.save(png_format, format='PNG')
+    png_format.seek(0)
 
-    print(image_cache_path,image_cache_size,image_cache_extension)
+    y_pred = img_to_array(depth)
+    print(y_pred)
 
-    if image_cache_extension[1:] not in ['jpg','jpeg','png']:
-        raise ValueError("Please send an image.")
+    mask = create_mask_in_one(y_pred, nb_mask=5)
+    #plans_array = create_mask_from_image(x_path :str, y_path: str, y_prec_path)
 
-    if not os.path.exists(image_cache_path):
-        return {"error": "Image not found on the server"}
-
-    if API_MODEL == 'local':
-
-        model = app.state.model
-        assert model is not None
-
-        X_processed_path = preprocess_one_image(image_cache_path, cache_folder, 'cache')
-        X_processed = np.expand_dims(get_npy_direct(X_processed_path),axis=0)
-        #print(X_processed.shape)
-        y_pred = model.predict(X_processed)
-        #print(y_pred)
-
-        all_path_pred = save_image(y_pred, cache_folder_preprocessed, filename)
-        pred_img_path = [x for x in all_path_pred if x.startswith(filename)][0]
-
-    elif API_MODEL == 'hf':
-
-        y_pred, pred_img_path = predict_and_save_DPTForDepthEstimation(image_cache_path, path=cache_folder_preprocessed)
-
-        #print(type(y_pred),y_pred.shape)
-        #print(pred_img_path)
-
-    bb = upload_one_file(pred_img_path,filename,pred_img_path.split('.')[-1],'_cache')
-    #print(bb)
-
-    url = get_blob_url(bb)
-    #print(url)
-
-    # ⚠️ fastapi only accepts simple Python data types as a return value
-    # among them dict, list, str, int, float, bool
-    # in order to be able to convert the api response to JSON
-    return dict(
-        url=url, # Url of the depth map
-        data=json.dumps(y_pred.tolist()) # The array of the depth map
-        )
-
+    return dict(plans='test')
     # $CHA_END
-
-# http://127.0.0.1:8000/slice?url=https://placehold.co/600x400&nb_planes=10
-@app.get("/slices")
-async def slices(
-        url: str,  # https://placehold.co/600x400get image size  file path
-        nb_planes: int | None = 5 # 1 or None
-    ):
-    """
-    Return all the planes of an image.
-    Assumes `url` is provided.
-    """
-    # $CHA_BEGIN
-
-    filename = str(uuid.uuid4())
-
-    image_cache_path, image_cache_extension = download_image(url, cache_folder + '_' + filename, filename)
-    image_cache_size = get_image_size(image_cache_path)
-
-    print(image_cache_path,image_cache_size,image_cache_extension)
-
-    if image_cache_extension[1:] not in ['jpg','jpeg','png']:
-        raise ValueError("Please send an image.")
-
-    if not os.path.exists(image_cache_path):
-        return {"error": "Image not found on the server"}
-
-    if API_MODEL == 'local':
-
-        model = app.state.model
-        assert model is not None
-
-        X_processed_path = preprocess_one_image(image_cache_path, cache_folder, 'cache')
-        X_processed = np.expand_dims(get_npy_direct(X_processed_path),axis=0)
-        #print(X_processed.shape)
-        y_pred = model.predict(X_processed)
-        #print(y_pred)
-
-        all_path_pred = save_image(y_pred, cache_folder_preprocessed, filename)
-        pred_img_path = [x for x in all_path_pred if x.startswith(filename)][0]
-
-    elif API_MODEL == 'hf':
-
-        y_pred, pred_img_path = predict_and_save_DPTForDepthEstimation(image_cache_path, path=cache_folder_preprocessed)
-
-        #print(type(y_pred),y_pred.shape)
-        #print(pred_img_path)
-
-    bb = upload_one_file(pred_img_path,filename,pred_img_path.split('.')[-1],'_cache')
-    #print(bb)
-
-    url = get_blob_url(bb)
-    #print(url)
-
-    # ⚠️ fastapi only accepts simple Python data types as a return value
-    # among them dict, list, str, int, float, bool
-    # in order to be able to convert the api response to JSON
-    return dict(
-        url=url, # Url of the depth map
-        data=json.dumps(y_pred.tolist()) # The array of the depth map
-        )
-
-# http://127.0.0.1:8000/convert?url=https://placehold.co/600x400
-@app.get("/convert")
-async def convert(
-        url: str,  # https://placehold.co/600x400
-    ):
-    """
-    Return a depth map as an array.
-    Assumes `url` is provided.
-    """
-    # $CHA_BEGIN
-
-    filename = str(uuid.uuid4())
-
-    image_cache_path, image_cache_extension = download_image(url, cache_folder, filename)
-    image_cache_size = get_image_size(image_cache_path)
-
-    #print(image_cache_path,image_cache_size,image_cache_extension)
-
-    if image_cache_extension[1:] not in ['jpg','jpeg','png']:
-        raise ValueError("Please send an image.")
-
-    if not os.path.exists(image_cache_path):
-        return {"error": "Image not found on the server"}
-
-    if API_MODEL == 'local':
-
-        model = app.state.model
-        assert model is not None
-
-        X_processed_path = preprocess_one_image(image_cache_path, cache_folder, 'cache')
-        X_processed = np.expand_dims(get_npy_direct(X_processed_path),axis=0)
-        #print(X_processed.shape)
-        y_pred = model.predict(X_processed)
-        #print(y_pred)
-
-        all_path_pred = save_image(y_pred, cache_folder_preprocessed, filename)
-        pred_img_path = [x for x in all_path_pred if x.startswith(filename)][0]
-
-    elif API_MODEL == 'hf':
-
-        y_pred, pred_img_path = predict_and_save_DPTForDepthEstimation(image_cache_path, path=cache_folder_preprocessed)
-
-        #print(type(y_pred),y_pred.shape)
-        #print(pred_img_path)
-
-    # ⚠️ fastapi only accepts simple Python data types as a return value
-    # among them dict, list, str, int, float, bool
-    # in order to be able to convert the api response to JSON
-    return dict(
-        data=json.dumps(y_pred.tolist()) # The array of the depth map
-        )
-
-    # $CHA_END
-
 
 @app.get("/")
 def root():
     # $CHA_BEGIN
-    return dict(greeting="Big up to the team")
+    return dict(greeting="Big up to the team!")
     # $CHA_END
 
 
