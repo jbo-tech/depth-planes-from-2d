@@ -172,3 +172,4 @@ notebooks/*.md
 notebooks/*.sh
 .env.yaml
 here.png
+credentials/
