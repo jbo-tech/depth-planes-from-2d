@@ -32,6 +32,7 @@ preprocessed_folder = os.path.join(LOCAL_DATA_PATH, "ok","_preprocessed")
 preprocessed_folder_X = os.path.join(LOCAL_DATA_PATH, "ok","_preprocessed","X")
 preprocessed_folder_y = os.path.join(LOCAL_DATA_PATH, "ok","_preprocessed","y")
 tmp_folder = os.path.join(LOCAL_DATA_PATH, "tmp")
+
 if not os.path.exists(LOCAL_DATA_PATH):
     os.makedirs(LOCAL_DATA_PATH)
 if not os.path.exists(preprocessed_folder):
@@ -45,20 +46,20 @@ def preprocess_dataset():
 
     if eval(DATA_URBANSYN) == True:
         if IMAGE_ENV == "gcp":
-            # X_path="urbansyn/rgb"
+            X_path="urbansyn/rgb"
             y_path="urbansyn/depth"
 
-            # X_file_list = gcp_list_files(X_path)
+            X_file_list = gcp_list_files(X_path)
             y_file_list = gcp_list_files(y_path)
 
         elif IMAGE_ENV == "local":
-            # X_path = os.path.join(LOCAL_DATA_PATH,"tmp", "urbansyn", "rgb")
+            X_path = os.path.join(LOCAL_DATA_PATH,"tmp", "urbansyn", "rgb")
             y_path = os.path.join(LOCAL_DATA_PATH,"tmp", "urbansyn", "depth")
 
-            # X_file_list = local_list_files(X_path)
+            X_file_list = local_list_files(X_path)
             y_file_list = local_list_files(y_path)
 
-        # preprocess_bulk( X_file_list,str(preprocessed_folder_X),'urbansyn')
+        preprocess_bulk( X_file_list,str(preprocessed_folder_X),'urbansyn')
         preprocess_bulk( y_file_list,str(preprocessed_folder_y),'urbansyn')
 
     if eval(DATA_MAKE3D) == True:
@@ -109,7 +110,8 @@ def preprocess_dataset():
         preprocess_bulk( nyudepthv2_file_list, str(preprocessed_folder),'nyudepthv2')
 
     # Upload tmp files
-    upload_directory_with_transfer_manager(source_directory=str(os.path.dirname(preprocessed_folder_y)), workers=8)
+    if SAVE_GCS == True:
+        upload_directory_with_transfer_manager(source_directory=str(os.path.dirname(preprocessed_folder_y)), workers=8)
 
 def preprocess_bulk(files: list, path_preprocessed: str, dataset_prefix: str):
     """
@@ -163,8 +165,23 @@ def preprocess_bulk(files: list, path_preprocessed: str, dataset_prefix: str):
         try:
             extension = files_in_tmp[0].split('.')[-1]
             if extension == "exr" or extension == "other":
-                chunck_arr = image_chunck_to_array(files_in_tmp)
-                preprocess_all_image(files_in_tmp, chunck_arr, path_preprocessed, dataset_prefix)
+                # Convert & save
+                chunk_arr = image_chunck_to_array(files_in_tmp)
+                chunk_folder = os.path.join(LOCAL_DATA_PATH, "tmp", dataset_prefix, "chunk", "y")
+                if not os.path.exists(chunk_folder):
+                    os.makedirs(chunk_folder)
+                format_num = 4 - len(str(chunk_end))
+                if format_num > 0:
+                    numero = '0' * format_num + f'{chunk_end}'
+                else:
+                    numero = chunk_end
+                local_save_data(chunk_arr, name=f'{dataset_prefix}_chunk_{numero}', path=chunk_folder)
+
+                # Combine all file in folder
+                data = get_npy_chunk()
+                data_preprocess = preprocess_all_chunk(data)
+                local_save_data(data_preprocess, f'{dataset_prefix}_pre', path_preprocessed)
+                # preprocess_all_image(files_in_tmp, chunk_arr, path_preprocessed, dataset_prefix)
             else:
                 for f in files_in_tmp:
                     print(f'Preprocessing : {f}')
@@ -243,6 +260,16 @@ def preprocess_all_image(list_path: list, chunck_arr: np.ndarray,
         #TO DO : other extension
         pass
 
+def preprocess_all_chunk(data:np.array) -> np.array:
+    """
+    From the array with all chunk combined do the preprocess
+    """
+
+    # Normalization Min Max
+    img_normalized = (data - np.min(data)) / (np.max(data) - np.min(data))
+
+    return img_normalized
+
 def image_chunck_to_array(path_list) -> np.ndarray:
     """
     Transform all images of the chunck in one array.
@@ -259,13 +286,17 @@ def image_chunck_to_array(path_list) -> np.ndarray:
 
     for path in path_list:
         img = cv2.imread(path, cv2.IMREAD_ANYCOLOR | cv2.IMREAD_ANYDEPTH)
-        res = cv2.resize(img, dsize=((eval(IMAGE_SHAPE)[1]), (eval(IMAGE_SHAPE)[0])), interpolation=cv2.INTER_CUBIC)
-        res = np.expand_dims(res, axis=0)
-        chunk_arr = np.concatenate((chunk_arr, res), axis=0)
+        res = cv2.resize(img, dsize=((eval(IMAGE_SHAPE)[1]), (eval(IMAGE_SHAPE)[0])), interpolation=cv2.INTER_NEAREST)
+        img_max = np.max(res)
 
-    chunk_arr = chunk_arr[1:]
+        if img_max != 1:
+            res = np.expand_dims(res, axis=0) # Not good place here to expand dim ??
+            chunk_arr = np.concatenate((chunk_arr, res), axis=0)
+        else:
+            pass
+            # missing part to save excluded file
 
-    return chunk_arr
+    return chunk_arr[1:]
 
 def preprocess_exr_to_array(chunck_arr, log_scale=1000, coef=50000) -> np.ndarray:
     """
