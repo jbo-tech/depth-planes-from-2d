@@ -59,7 +59,7 @@ def load_processed_data(split_ratio: float = 0.2):
     # Load processed data using data.py
 
     path_X = os.path.join(LOCAL_DATA_PATH, 'ok', '_preprocessed', 'X')
-    path_y = os.path.join(LOCAL_DATA_PATH, 'ok', '_preprocessed', 'y', 'urbasyn_pre')
+    path_y = os.path.join(LOCAL_DATA_PATH, 'ok', '_preprocessed', 'y', 'urbansyn_pre')
 
     data_processed_X = get_npy(path_X) #array -> shape (nb, 128,256,3)
 
