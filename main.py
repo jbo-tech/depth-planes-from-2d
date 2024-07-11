@@ -58,11 +58,12 @@ def load_processed_data(split_ratio: float = 0.2):
 
     # Load processed data using data.py
 
-    path_X = f'{LOCAL_DATA_PATH}/ok/_preprocessed/X'
-    path_y = f'{LOCAL_DATA_PATH}/ok/_preprocessed/y'
+    path_X = os.path.join(LOCAL_DATA_PATH, 'ok', '_preprocessed', 'X')
+    path_y = os.path.join(LOCAL_DATA_PATH, 'ok', '_preprocessed', 'y', 'urbasyn_pre')
 
     data_processed_X = get_npy(path_X) #array -> shape (nb, 128,256,3)
-    data_processed_y = get_npy(path_y) #array -> shape (nb, 128, 256, 1)
+
+    data_processed_y = np.load(path_y) #array -> shape (nb, 128, 256, 1)
 
     # Create (X_train, y_train, X_test, y_test)
 
@@ -221,10 +222,10 @@ def predict_and_save_DPTForDepthEstimation(image_path, path=LOCAL_REGISTRY_IMG_P
 
 if __name__ == '__main__':
     preprocess()
-    # X_train, X_test, y_train, y_test = load_processed_data()
-    # train(X_train=X_train, y_train=y_train)
-    # evaluate(X_test=X_test, y_test=y_test)
-    # predict(X_pred=X_test)
+    X_train, X_test, y_train, y_test = load_processed_data()
+    train(X_train=X_train, y_train=y_train)
+    evaluate(X_test=X_test, y_test=y_test)
+    predict(X_pred=X_test)
 
     # path_X = f'{LOCAL_REGISTRY_PATH}/urbansyn_rgb_0003_pre.npy'
     # data_processed_X = get_npy(path_X) #array -> shape (nb, 128,256,3)
