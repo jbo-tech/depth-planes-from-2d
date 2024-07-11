@@ -42,6 +42,25 @@ def get_npy(path: str) -> np.array:
     #print(response)
     return response
 
+def get_npy_chunk(path: str) -> np.array:
+    """
+    _summary_
+
+    Args:
+        path (str): _description_
+
+    Returns:
+        np.array: _description_
+    """
+    list_npy = local_list_files(path)
+    all_arr = np.zeros((1, eval(IMAGE_SHAPE)[0], eval(IMAGE_SHAPE)[1]))
+
+    for f in sorted(list_npy):
+        npy = np.load(f)
+        all_arr = np.concatenate((all_arr, npy), axis=0)
+
+    response = np.expand_dims(all_arr,axis=3) if all_arr.ndim == 3 else all_arr
+    return response[1:]
 
 def get_npy_direct(path_direct: str) -> np.array:
     """
