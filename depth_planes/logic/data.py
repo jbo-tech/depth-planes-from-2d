@@ -38,7 +38,9 @@ def get_npy(path: str) -> np.array:
         npy = np.load(f)
         list_npy_array.append(npy)
 
-    response = np.expand_dims(list_npy_array,axis=3) if np.array(list_npy_array).ndim == 3 else np.array(list_npy_array)
+    arr = np.array(list_npy_array)
+
+    response = np.expand_dims(arr,axis=3) if arr.ndim == 3 else arr
     #print(response)
     return response
 
