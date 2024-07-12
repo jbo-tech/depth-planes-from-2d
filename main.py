@@ -12,6 +12,7 @@ from depth_planes.logic.data import *
 from params import *
 
 import logging
+from colorama import Fore, Style #for color in terminal
 
 logging.basicConfig(filename="depth_planes.log",
                     format='%(asctime)s %(message)s',
@@ -57,14 +58,15 @@ def preprocess():
 def load_processed_data(split_ratio: float = 0.2):
 
     # Load processed data using data.py
+    print(Fore.BLUE + f'Loading data' + Style.RESET_ALL)
+    path_X = os.path.join(LOCAL_DATA_PATH, 'ok', '_preprocessed', 'X', '_urbansyn_X_pre.npy')
+    path_y = os.path.join(LOCAL_DATA_PATH, 'ok', '_preprocessed', 'y', '_urbansyn_y_pre.npy')
 
-    path_X = os.path.join(LOCAL_DATA_PATH, 'ok', '_preprocessed', 'X')
-    path_y = os.path.join(LOCAL_DATA_PATH, 'ok', '_preprocessed', 'y', 'urbansyn_pre')
-
-    data_processed_X = get_npy(path_X) #array -> shape (nb, 128,256,3)
-
+    # data_processed_X = get_npy(path_X) #array -> shape (nb, 128,256,3)
+    data_processed_X = np.load(path_X)
+    print('X loaded')
     data_processed_y = np.load(path_y) #array -> shape (nb, 128, 256, 1)
-
+    print('y loaded')
     # Create (X_train, y_train, X_test, y_test)
 
     X_train, X_test, y_train, y_test = train_test_split(data_processed_X, data_processed_y, test_size=split_ratio)
@@ -221,7 +223,7 @@ def predict_and_save_DPTForDepthEstimation(image_path, path=LOCAL_REGISTRY_IMG_P
 
 
 if __name__ == '__main__':
-    preprocess()
+    # preprocess()
     X_train, X_test, y_train, y_test = load_processed_data()
     train(X_train=X_train, y_train=y_train)
     evaluate(X_test=X_test, y_test=y_test)
