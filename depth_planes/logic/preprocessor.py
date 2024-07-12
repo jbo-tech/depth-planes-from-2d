@@ -177,10 +177,7 @@ def preprocess_bulk(files: list, path_preprocessed: str, dataset_prefix: str):
                     numero = chunk_end
                 local_save_data(chunk_arr, name=f'{dataset_prefix}_chunk_{numero}', path=chunk_folder)
 
-                # Combine all file in folder
-                data = get_npy_chunk()
-                data_preprocess = preprocess_all_chunk(data)
-                local_save_data(data_preprocess, f'{dataset_prefix}_pre', path_preprocessed)
+
                 # preprocess_all_image(files_in_tmp, chunk_arr, path_preprocessed, dataset_prefix)
             else:
                 for f in files_in_tmp:
@@ -192,8 +189,18 @@ def preprocess_bulk(files: list, path_preprocessed: str, dataset_prefix: str):
             except:
                 logging.error(f"Unexpected {NameError}, {TypeError} ({RuntimeError})\n")
 
+
         # Clean the tmp folder
         # clean_data(tmp_folder)
+
+    if extension == "exr":
+        # Combine all file in folder
+        print("Combined")
+        data = get_npy_chunk(chunk_folder)
+        print("Preprocess")
+        data_preprocess = preprocess_all_chunk(data)
+        print("Save")
+        local_save_data(data_preprocess, f'_{dataset_prefix}_y_pre', path_preprocessed)
 
     return "Preprocess local: Ok"
 
