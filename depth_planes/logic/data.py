@@ -175,8 +175,8 @@ def download_many_blobs_with_transfer_manager(
 
     from google.cloud.storage import Client, transfer_manager
 
-    storage_client = Client(project=GCP_PROJECT_OLD)
-    bucket = storage_client.bucket(BUCKET_NAME_OLD)
+    storage_client = Client(project=GCP_PROJECT)
+    bucket = storage_client.bucket(BUCKET_NAME)
 
     results = transfer_manager.download_many_to_path(
         bucket, blob_names, destination_directory=destination_directory, max_workers=workers
@@ -430,4 +430,9 @@ if __name__ == '__main__':
     #local_list_files('/home/jbo/code/soapoperator/depth-planes-from-2d/raw_data/tmp')
     #get_npy(f'{LOCAL_DATA_PATH}/ok/_preprocessed/X')
     #test_nb_mask()
-    pass
+    bloob_list = ['urbansyn/ok/_preprocessed/_urbansyn_X_pre.npy',
+                  'urbansyn/ok/_preprocessed/_urbansyn_y_pre.npy']
+    download_many_blobs_with_transfer_manager(bloob_list,
+                                              destination_directory="raw_data/ok/_preprocessed/",
+                                              workers=8)
+    # pass
